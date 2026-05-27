@@ -49,6 +49,7 @@ export class SnakeScene extends Phaser.Scene {
   private snake: Cell[] = [];
   private apple: Cell | null = null;
   private direction: Cell = { ...DIRECTIONS.right };
+  private pendingDirections: Cell[] = [];
   private graphics!: Phaser.GameObjects.Graphics;
   private scoreText!: Phaser.GameObjects.Text;
   private highScoreText!: Phaser.GameObjects.Text;
@@ -130,6 +131,7 @@ export class SnakeScene extends Phaser.Scene {
     ];
     this.apple = null;
     this.direction = { ...DIRECTIONS.right };
+    this.pendingDirections = [];
     this.score = 0;
     this.moveDelay = INITIAL_MOVE_DELAY;
     this.nextMoveAt = 0;
@@ -177,29 +179,39 @@ export class SnakeScene extends Phaser.Scene {
   }
 
   private queueTurn(nextDirection: Cell): void {
+    if (this.finished) {
+      return;
+    }
+
+    const lastQueuedDirection = this.pendingDirections[this.pendingDirections.length - 1];
+    const referenceDirection = lastQueuedDirection ?? this.direction;
+
     if (
-      this.finished ||
-      this.isOpposite(nextDirection) ||
-      (this.started && this.isSameDirection(nextDirection))
+      this.isOpposite(nextDirection, referenceDirection) ||
+      (this.started && this.isSameDirection(nextDirection, referenceDirection)) ||
+      this.pendingDirections.length >= 2
     ) {
       return;
     }
 
-    this.direction = { ...nextDirection };
-    this.started = true;
-    this.hintText.setText('R: 다시 시작');
-    this.advanceSnake(this.time.now);
+    this.pendingDirections.push({ ...nextDirection });
+
+    if (!this.started) {
+      this.started = true;
+      this.hintText.setText('R: 다시 시작');
+      this.advanceSnake(this.time.now);
+    }
   }
 
-  private isOpposite(nextDirection: Cell): boolean {
+  private isOpposite(nextDirection: Cell, currentDirection = this.direction): boolean {
     return (
-      nextDirection.x === -this.direction.x &&
-      nextDirection.y === -this.direction.y
+      nextDirection.x === -currentDirection.x &&
+      nextDirection.y === -currentDirection.y
     );
   }
 
-  private isSameDirection(nextDirection: Cell): boolean {
-    return nextDirection.x === this.direction.x && nextDirection.y === this.direction.y;
+  private isSameDirection(nextDirection: Cell, currentDirection = this.direction): boolean {
+    return nextDirection.x === currentDirection.x && nextDirection.y === currentDirection.y;
   }
 
   private advanceSnake(time: number): void {
@@ -211,6 +223,11 @@ export class SnakeScene extends Phaser.Scene {
   }
 
   private moveSnake(): void {
+    const nextDirection = this.pendingDirections.shift();
+    if (nextDirection) {
+      this.direction = nextDirection;
+    }
+
     const head = this.snake[0];
     const nextHead = {
       x: head.x + this.direction.x,

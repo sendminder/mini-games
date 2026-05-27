@@ -63,6 +63,7 @@ const SUPER_BALL_DURATION_MS = 7000;
 const BULLET_COUNT = 10;
 const PADDLE_MIN_WIDTH = 98;
 const PADDLE_MAX_WIDTH = 206;
+const MAX_BALL_COUNT = 10;
 
 export class BrickBreakerScene extends Phaser.Scene {
   private field!: PlayField;
@@ -663,10 +664,19 @@ export class BrickBreakerScene extends Phaser.Scene {
   }
 
   private splitCurrentBalls(): void {
+    const remainingSlots = MAX_BALL_COUNT - this.balls.length;
+    if (remainingSlots <= 0) {
+      return;
+    }
+
     const currentBalls = [...this.balls];
     const clones: BallState[] = [];
 
     for (const source of currentBalls) {
+      if (clones.length >= remainingSlots) {
+        break;
+      }
+
       const speed = Math.sqrt(source.vx * source.vx + source.vy * source.vy) || this.getBallSpeed();
 
       if (source.attached) {

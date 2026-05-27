@@ -33,6 +33,7 @@ const INITIAL_DROP_MS = 820;
 const MIN_DROP_MS = 180;
 const DROP_STEP_MS = 55;
 const SOFT_DROP_MS = 65;
+const TOUCH_MOVE_REPEAT_MS = 95;
 const PIECE_START_X = 3;
 const PIECE_START_Y = 0;
 
@@ -123,6 +124,8 @@ export class TetrisScene extends Phaser.Scene {
   private finished = false;
   private softDropHeld = false;
   private moveLocked = false;
+  private touchMoveDirection = 0;
+  private touchMoveAccumulator = 0;
 
   constructor() {
     super('TetrisScene');
@@ -179,6 +182,7 @@ export class TetrisScene extends Phaser.Scene {
     }
 
     const frameMs = Math.min(delta, 50);
+    this.updateTouchMove(frameMs);
     this.dropAccumulator += frameMs;
 
     const effectiveDelay = this.softDropHeld ? SOFT_DROP_MS : this.dropDelay;
@@ -208,6 +212,8 @@ export class TetrisScene extends Phaser.Scene {
     this.finished = false;
     this.softDropHeld = false;
     this.moveLocked = false;
+    this.touchMoveDirection = 0;
+    this.touchMoveAccumulator = 0;
   }
 
   private bindControls(): void {
@@ -264,6 +270,31 @@ export class TetrisScene extends Phaser.Scene {
     if (this.canPlace(candidate)) {
       this.currentPiece = candidate;
       this.drawBoard();
+    }
+  }
+
+  private handleTouchMoveStart(direction: number): void {
+    this.touchMoveDirection = direction;
+    this.touchMoveAccumulator = 0;
+    this.movePiece(direction);
+  }
+
+  private handleTouchMoveEnd(direction: number): void {
+    if (this.touchMoveDirection === direction) {
+      this.touchMoveDirection = 0;
+      this.touchMoveAccumulator = 0;
+    }
+  }
+
+  private updateTouchMove(deltaMs: number): void {
+    if (this.touchMoveDirection === 0) {
+      return;
+    }
+
+    this.touchMoveAccumulator += deltaMs;
+    while (this.touchMoveAccumulator >= TOUCH_MOVE_REPEAT_MS) {
+      this.touchMoveAccumulator -= TOUCH_MOVE_REPEAT_MS;
+      this.movePiece(this.touchMoveDirection);
     }
   }
 
@@ -599,9 +630,23 @@ export class TetrisScene extends Phaser.Scene {
       }).setOrigin(0.5).setDepth(21);
     };
 
-    createButton(centerX - buttonWidth - gap, firstRowY, buttonWidth, '←', () => this.moveLeft());
+    createButton(
+      centerX - buttonWidth - gap,
+      firstRowY,
+      buttonWidth,
+      '←',
+      () => this.handleTouchMoveStart(-1),
+      () => this.handleTouchMoveEnd(-1),
+    );
     createButton(centerX, firstRowY, buttonWidth, '⟳', () => this.rotatePiece());
-    createButton(centerX + buttonWidth + gap, firstRowY, buttonWidth, '→', () => this.moveRight());
+    createButton(
+      centerX + buttonWidth + gap,
+      firstRowY,
+      buttonWidth,
+      '→',
+      () => this.handleTouchMoveStart(1),
+      () => this.handleTouchMoveEnd(1),
+    );
     createButton(
       centerX - actionWidth / 2 - gap / 2,
       secondRowY,
