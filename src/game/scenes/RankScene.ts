@@ -21,6 +21,7 @@ const GAME_TABS: GameTab[] = [
   { key: 'snake', label: '애벌레', accent: 0x4ade80, color: '#4ade80' },
   { key: 'dodge', label: '똥피하기', accent: 0xf59e0b, color: '#f59e0b' },
   { key: 'whack', label: '두더지', accent: 0x60a5fa, color: '#60a5fa' },
+  { key: 'tetris', label: '테트리스', accent: 0x38bdf8, color: '#38bdf8' },
 ];
 
 export class RankScene extends Phaser.Scene {
@@ -49,7 +50,7 @@ export class RankScene extends Phaser.Scene {
     const backButtonX = portrait ? 72 : 84;
     const backButtonY = chrome.backButtonY;
     const tabY = portrait ? 132 : 138;
-    const startY = portrait ? 184 : 196;
+    const startY = portrait ? 186 : 198;
 
     this.add
       .text(titleX, titleY, '글로벌 순위', {
@@ -106,9 +107,9 @@ export class RankScene extends Phaser.Scene {
   private createTabs(y: number): void {
     const width = this.scale.width;
     const portrait = this.isPortrait();
-    const tabWidth = portrait ? Math.min(92, Math.floor((width - 32) / 3)) : 190;
+    const tabWidth = portrait ? Math.min(86, Math.floor((width - 32) / GAME_TABS.length)) : 160;
     const tabHeight = portrait ? 38 : 50;
-    const totalWidth = tabWidth * 3 + 8 * 2;
+    const totalWidth = tabWidth * GAME_TABS.length + 16 * (GAME_TABS.length - 1);
     const startX = width / 2 - totalWidth / 2 + tabWidth / 2;
 
     GAME_TABS.forEach((tab, index) => {
@@ -135,7 +136,7 @@ export class RankScene extends Phaser.Scene {
         .text(x, y, tab.label, {
           color: '#f8fafc',
           fontFamily: 'Arial, sans-serif',
-          fontSize: portrait ? '13px' : '16px',
+          fontSize: portrait ? '12px' : '15px',
           fontStyle: 'bold',
           resolution: TEXT_RESOLUTION,
           wordWrap: { width: tabWidth - 18 },
@@ -172,7 +173,7 @@ export class RankScene extends Phaser.Scene {
   private renderRows(entries: Awaited<ReturnType<typeof fetchLeaderboard>>): void {
     const width = this.scale.width;
     const portrait = this.isPortrait();
-    const rowStartY = portrait ? 230 : 214;
+    const rowStartY = portrait ? 234 : 218;
     const rowGap = portrait ? 42 : 50;
     const rankX = portrait ? 40 : 90;
     const nameX = portrait ? 104 : 220;

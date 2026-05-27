@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { configureHiDpiCamera, TEXT_RESOLUTION } from '../render';
-import { getDodgeHighScore, getSnakeHighScore, getWhackHighScore } from '../storage/highScore';
+import { getDodgeHighScore, getSnakeHighScore, getTetrisHighScore, getWhackHighScore } from '../storage/highScore';
 
 type GameCardConfig = {
   y: number;
@@ -36,6 +36,7 @@ export class MenuScene extends Phaser.Scene {
     const snakeHighScore = getSnakeHighScore();
     const dodgeHighScore = getDodgeHighScore();
     const whackHighScore = getWhackHighScore();
+    const tetrisHighScore = getTetrisHighScore();
     const layout = this.getLayout();
     const width = this.scale.width;
 
@@ -75,6 +76,9 @@ export class MenuScene extends Phaser.Scene {
     const startDodge = (): void => {
       this.scene.start('DodgeScene');
     };
+    const startTetris = (): void => {
+      this.scene.start('TetrisScene');
+    };
 
     this.createGameCard({
       y: layout.cardYs[0],
@@ -108,6 +112,16 @@ export class MenuScene extends Phaser.Scene {
         this.scene.start('WhackScene');
       },
     }, layout);
+    this.createGameCard({
+      y: layout.cardYs[3],
+      label: '4  TETRIS',
+      title: '테트리스 라이트',
+      description: '좌우 이동과 회전으로 줄을 완성하세요.',
+      highScore: tetrisHighScore,
+      accent: 0xf87171,
+      accentColor: '#f87171',
+      start: startTetris,
+    }, layout);
 
     this.add
       .text(layout.titleX, layout.footerY, '카드 클릭 또는 숫자 키로 시작', {
@@ -128,6 +142,8 @@ export class MenuScene extends Phaser.Scene {
     this.input.keyboard?.once('keydown-NUMPAD_THREE', () => {
       this.scene.start('WhackScene');
     });
+    this.input.keyboard?.once('keydown-FOUR', startTetris);
+    this.input.keyboard?.once('keydown-NUMPAD_FOUR', startTetris);
   }
 
   private createGameCard(config: GameCardConfig, layout: MenuLayout): void {
@@ -227,17 +243,17 @@ export class MenuScene extends Phaser.Scene {
         subtitleY: 88,
         cardX: 230,
         cardWidth: 560,
-        cardHeight: 136,
-        cardYs: [160, 292, 424],
+        cardHeight: 94,
+        cardYs: [146, 250, 354, 458],
         footerY: 516,
       };
     }
 
     const cardX = 24;
     const cardWidth = width - 48;
-    const cardHeight = Math.min(168, Math.floor((height - 240) / 3));
-    const gap = 16;
-    const firstCardY = 174;
+    const cardHeight = Math.min(136, Math.floor((height - 270) / 4));
+    const gap = 12;
+    const firstCardY = 150;
 
     return {
       portrait: true,
@@ -251,6 +267,7 @@ export class MenuScene extends Phaser.Scene {
         firstCardY,
         firstCardY + cardHeight + gap,
         firstCardY + (cardHeight + gap) * 2,
+        firstCardY + (cardHeight + gap) * 3,
       ],
       footerY: height - 30,
     };

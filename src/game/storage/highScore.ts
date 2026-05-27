@@ -1,6 +1,7 @@
 const SNAKE_HIGH_SCORE_KEY = 'shift.snake.highScore';
 const DODGE_HIGH_SCORE_KEY = 'shift.dodge.highScore';
 const WHACK_HIGH_SCORE_KEY = 'shift.whack.highScore';
+const TETRIS_HIGH_SCORE_KEY = 'shift.tetris.highScore';
 
 export function getSnakeHighScore(): number {
   return getHighScore(SNAKE_HIGH_SCORE_KEY);
@@ -24,6 +25,14 @@ export function getWhackHighScore(): number {
 
 export function saveWhackHighScore(score: number): number {
   return saveHighScore(WHACK_HIGH_SCORE_KEY, score);
+}
+
+export function getTetrisHighScore(): number {
+  return getHighScore(TETRIS_HIGH_SCORE_KEY);
+}
+
+export function saveTetrisHighScore(score: number): number {
+  return saveHighScore(TETRIS_HIGH_SCORE_KEY, score);
 }
 
 function getHighScore(key: string): number {

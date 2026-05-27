@@ -1,8 +1,9 @@
 import Phaser from 'phaser';
 import { configureHiDpiCamera, TEXT_RESOLUTION } from '../render';
 import { getDodgeHighScore, saveDodgeHighScore } from '../storage/highScore';
-import { fetchMyBestRecord, submitScore } from '../storage/leaderboard';
 import { createScreenChrome } from '../ui/screen';
+import { createGameHud } from '../ui/gameHud';
+import { showGameOverPanel } from '../ui/gameOver';
 
 type FallingObstacle = {
   x: number;
@@ -70,27 +71,11 @@ export class DodgeScene extends Phaser.Scene {
     const chrome = createScreenChrome(this.scale.width, this.scale.height);
     const portrait = chrome.portrait;
     const width = chrome.width;
-    const titleX = width / 2;
-    const titleY = chrome.titleY;
-    const highScoreX = portrait ? 16 : 810;
-    const scoreX = portrait ? 16 : 810;
     const timeX = portrait ? width / 2 : 480;
     const timeY = portrait ? 56 : 46;
-    const scoreY = chrome.topRowY;
-    const footerY = chrome.footerY;
-    const backButtonX = chrome.backButtonX;
-    const backButtonY = chrome.backButtonY;
     const hintText = portrait
       ? '좌/우 버튼 또는 키보드  |  양 끝은 연결됨'
       : '← → 길게 눌러 가속  |  양 끝은 연결됨';
-
-    this.add.text(titleX, titleY, '똥피하기', {
-      color: '#f8fafc',
-      fontFamily: 'Arial, sans-serif',
-      fontSize: `${chrome.titleFontSize}px`,
-      fontStyle: 'bold',
-      resolution: TEXT_RESOLUTION,
-    }).setOrigin(0.5);
 
     this.timeText = this.add.text(timeX, timeY, '생존  0.0초', {
       color: '#94a3b8',
@@ -100,23 +85,22 @@ export class DodgeScene extends Phaser.Scene {
     });
     this.timeText.setOrigin(0.5);
 
-    this.highScoreText = this.add.text(highScoreX, portrait ? 24 : 30, `최고  ${this.highScore}`, {
-      color: '#facc15',
-      fontFamily: 'Arial, sans-serif',
-      fontSize: portrait ? '14px' : '18px',
-      fontStyle: 'bold',
-      resolution: TEXT_RESOLUTION,
+    const hud = createGameHud(this, chrome, {
+      title: '똥피하기',
+      scoreLabel: '피함',
+      scoreValue: 0,
+      highScoreLabel: '최고',
+      highScoreValue: this.highScore,
+      footerText: hintText,
+      onBack: () => {
+        this.openMenu();
+      },
+      titleFontSize: chrome.titleFontSize,
+      scoreFontSize: portrait ? 15 : 19,
+      highScoreFontSize: portrait ? 14 : 18,
     });
-    this.highScoreText.setOrigin(0, 0);
-
-    this.scoreText = this.add.text(scoreX, scoreY, '피함  0', {
-      color: '#f8fafc',
-      fontFamily: 'Arial, sans-serif',
-      fontSize: portrait ? '15px' : '19px',
-      fontStyle: 'bold',
-      resolution: TEXT_RESOLUTION,
-    });
-    this.scoreText.setOrigin(0, 0);
+    this.highScoreText = hud.highScoreText;
+    this.scoreText = hud.scoreText;
 
     this.add
       .rectangle(
@@ -130,16 +114,6 @@ export class DodgeScene extends Phaser.Scene {
 
     this.graphics = this.add.graphics();
 
-    this.add
-      .text(portrait ? width / 2 : 480, footerY, hintText, {
-        color: '#94a3b8',
-        fontFamily: 'Arial, sans-serif',
-        fontSize: `${chrome.smallFontSize}px`,
-        resolution: TEXT_RESOLUTION,
-      })
-      .setOrigin(0.5);
-
-    this.createBackButton(backButtonX, backButtonY);
     if (portrait) {
       this.createTouchControls();
     }
@@ -444,97 +418,16 @@ export class DodgeScene extends Phaser.Scene {
   }
 
   private async showGameOver(): Promise<void> {
-    await submitScore('dodge', this.score);
-    const myBest = await fetchMyBestRecord('dodge');
-    const portrait = this.isPortrait();
-    const width = this.scale.width;
-    const height = this.scale.height;
-    const panelWidth = portrait ? Math.min(360, width - 24) : 430;
-    const panelHeight = portrait ? 244 : 170;
-    const panelX = width / 2;
-    const panelY = portrait ? Math.round(height * 0.37) : 282;
-    const titleY = portrait ? panelY - 78 : 244;
-    const currentScoreY = portrait ? panelY - 42 : 274;
-    const bestScoreY = portrait ? panelY - 16 : 302;
-    const rankY = portrait ? panelY + 10 : 330;
-    const rankButtonY = portrait ? panelY + 48 : 356;
-    const restartButtonY = portrait ? panelY + 92 : 392;
-    const primaryWidth = portrait ? 204 : 190;
-    const buttonHeight = portrait ? 38 : 40;
-    const bestScoreText = myBest ? `나의 최고점수  ${myBest.score}` : '나의 최고점수  없음';
-    const bestRankText = myBest ? `글로벌 등수  ${myBest.rank}위` : '글로벌 등수  -';
-
-    this.add.rectangle(panelX + 3, panelY + 4, panelWidth, panelHeight, 0x020617, 0.55).setDepth(999);
-    this.add.rectangle(panelX, panelY, panelWidth, panelHeight, 0x060d18, 0.96).setStrokeStyle(2, 0x334155).setDepth(1000);
-    this.add.text(panelX, titleY, '게임 오버', {
-      color: '#f8fafc',
-      fontFamily: 'Arial, sans-serif',
-      fontSize: portrait ? '26px' : '30px',
-      fontStyle: 'bold',
-      resolution: TEXT_RESOLUTION,
-    }).setOrigin(0.5).setDepth(1001);
-    this.add.text(panelX, currentScoreY, `지금점수  ${this.score}`, {
-      color: '#cbd5e1',
-      fontFamily: 'Arial, sans-serif',
-      fontSize: portrait ? '14px' : '16px',
-      resolution: TEXT_RESOLUTION,
-    }).setOrigin(0.5).setDepth(1001);
-    this.add.text(panelX, bestScoreY, bestScoreText, {
-      color: '#f8fafc',
-      fontFamily: 'Arial, sans-serif',
-      fontSize: portrait ? '13px' : '15px',
-      fontStyle: 'bold',
-      resolution: TEXT_RESOLUTION,
-    }).setOrigin(0.5).setDepth(1001);
-    this.add.text(panelX, rankY, bestRankText, {
-      color: '#facc15',
-      fontFamily: 'Arial, sans-serif',
-      fontSize: portrait ? '13px' : '15px',
-      fontStyle: 'bold',
-      resolution: TEXT_RESOLUTION,
-    }).setOrigin(0.5).setDepth(1001);
-
-    const rankButton = this.add.rectangle(panelX, rankButtonY, primaryWidth, buttonHeight, 0x1d4ed8, 0.96)
-      .setStrokeStyle(3, 0x93c5fd)
-      .setInteractive({ useHandCursor: true })
-      .setDepth(1002);
-    rankButton.on('pointerdown', () => {
-      this.scene.start('RankScene', { gameKey: 'dodge' });
+    void showGameOverPanel(this, {
+      gameKey: 'dodge',
+      score: this.score,
+      onRank: () => {
+        this.scene.start('RankScene', { gameKey: 'dodge' });
+      },
+      onRestart: () => {
+        this.restart();
+      },
     });
-    rankButton.on('pointerover', () => {
-      rankButton.setFillStyle(0x2563eb, 0.98).setStrokeStyle(3, 0xbfdbfe);
-    });
-    rankButton.on('pointerout', () => {
-      rankButton.setFillStyle(0x1d4ed8, 0.96).setStrokeStyle(3, 0x93c5fd);
-    });
-    this.add.text(panelX, rankButtonY, '순위 확인하기', {
-      color: '#eff6ff',
-      fontFamily: 'Arial, sans-serif',
-      fontSize: portrait ? '14px' : '15px',
-      fontStyle: 'bold',
-      resolution: TEXT_RESOLUTION,
-    }).setOrigin(0.5).setDepth(1003);
-
-    const restartButton = this.add.rectangle(panelX, restartButtonY, primaryWidth, buttonHeight, 0xf59e0b, 1)
-      .setStrokeStyle(3, 0xfde68a)
-      .setInteractive({ useHandCursor: true })
-      .setDepth(1002);
-    restartButton.on('pointerdown', () => {
-      this.restart();
-    });
-    restartButton.on('pointerover', () => {
-      restartButton.setFillStyle(0xfbbf24, 1).setStrokeStyle(3, 0xffffff);
-    });
-    restartButton.on('pointerout', () => {
-      restartButton.setFillStyle(0xf59e0b, 1).setStrokeStyle(3, 0xfde68a);
-    });
-    this.add.text(panelX, restartButtonY, '다시 시작', {
-      color: '#111827',
-      fontFamily: 'Arial, sans-serif',
-      fontSize: portrait ? '15px' : '16px',
-      fontStyle: 'bold',
-      resolution: TEXT_RESOLUTION,
-    }).setOrigin(0.5).setDepth(1003);
   }
 
   private createTouchControls(): void {
@@ -604,36 +497,6 @@ export class DodgeScene extends Phaser.Scene {
         this.virtualRight = false;
       },
     );
-  }
-
-  private createBackButton(x: number, y: number): void {
-    const buttonWidth = 96;
-    const buttonHeight = 34;
-
-    const button = this.add
-      .rectangle(x, y, buttonWidth, buttonHeight, 0x111c30, 0.9)
-      .setStrokeStyle(2, 0x334155)
-      .setInteractive({ useHandCursor: true });
-
-    button.on('pointerdown', () => {
-      this.openMenu();
-    });
-    button.on('pointerover', () => {
-      button.setFillStyle(0x1a2a45, 0.96).setStrokeStyle(2, 0x60a5fa);
-    });
-    button.on('pointerout', () => {
-      button.setFillStyle(0x111c30, 0.9).setStrokeStyle(2, 0x334155);
-    });
-
-    this.add
-      .text(x, y, '뒤로가기', {
-        color: '#f8fafc',
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '14px',
-        fontStyle: 'bold',
-        resolution: TEXT_RESOLUTION,
-      })
-      .setOrigin(0.5);
   }
 
   private get fieldWidth(): number {

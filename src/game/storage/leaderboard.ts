@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-export type GameKey = 'snake' | 'dodge' | 'whack';
+export type GameKey = 'snake' | 'dodge' | 'whack' | 'tetris';
 
 export type LeaderboardEntry = {
   id: string;

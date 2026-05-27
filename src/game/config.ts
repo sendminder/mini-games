@@ -4,6 +4,7 @@ import { DodgeScene } from './scenes/DodgeScene';
 import { MenuScene } from './scenes/MenuScene';
 import { RankScene } from './scenes/RankScene';
 import { SnakeScene } from './scenes/SnakeScene';
+import { TetrisScene } from './scenes/TetrisScene';
 import { WhackScene } from './scenes/WhackScene';
 
 export const gameConfig: Phaser.Types.Core.GameConfig = {
@@ -17,5 +18,5 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
   backgroundColor: '#111827',
-  scene: [MenuScene, RankScene, SnakeScene, DodgeScene, WhackScene],
+  scene: [MenuScene, RankScene, SnakeScene, DodgeScene, WhackScene, TetrisScene],
 };

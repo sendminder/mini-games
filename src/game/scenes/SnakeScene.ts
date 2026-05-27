@@ -1,8 +1,9 @@
 import Phaser from 'phaser';
 import { configureHiDpiCamera, TEXT_RESOLUTION } from '../render';
 import { getSnakeHighScore, saveSnakeHighScore } from '../storage/highScore';
-import { fetchMyBestRecord, submitScore } from '../storage/leaderboard';
 import { createScreenChrome } from '../ui/screen';
+import { createGameHud } from '../ui/gameHud';
+import { showGameOverPanel } from '../ui/gameOver';
 
 type Cell = {
   x: number;
@@ -73,42 +74,20 @@ export class SnakeScene extends Phaser.Scene {
     const portrait = chrome.portrait;
     const width = chrome.width;
     const height = chrome.height;
-    const titleX = width / 2;
-    const titleY = chrome.titleY;
-    const highScoreX = portrait ? 16 : 792;
-    const scoreX = portrait ? 16 : 792;
-    const scoreY = chrome.topRowY;
-    const footerY = chrome.footerY;
-    const backButtonX = chrome.backButtonX;
-    const backButtonY = chrome.backButtonY;
 
-    this.add
-      .text(titleX, titleY, '사과 먹는 애벌레', {
-        color: '#f8fafc',
-        fontFamily: 'Arial, sans-serif',
-        fontSize: `${chrome.titleFontSize}px`,
-        fontStyle: 'bold',
-        resolution: TEXT_RESOLUTION,
-      })
-      .setOrigin(0.5);
-
-    this.highScoreText = this.add.text(highScoreX, portrait ? 24 : 30, `최고  ${this.highScore}`, {
-      color: '#facc15',
-      fontFamily: 'Arial, sans-serif',
-      fontSize: portrait ? '14px' : '18px',
-      fontStyle: 'bold',
-      resolution: TEXT_RESOLUTION,
+    const hud = createGameHud(this, chrome, {
+      title: '사과 먹는 애벌레',
+      scoreLabel: '점수',
+      scoreValue: 0,
+      highScoreLabel: '최고',
+      highScoreValue: this.highScore,
+      footerText: '화살표 키로 시작',
+      onBack: () => {
+        this.openMenu();
+      },
     });
-    this.highScoreText.setOrigin(0, 0);
-
-    this.scoreText = this.add.text(scoreX, scoreY, '점수  0', {
-      color: '#f8fafc',
-      fontFamily: 'Arial, sans-serif',
-      fontSize: portrait ? '15px' : '19px',
-      fontStyle: 'bold',
-      resolution: TEXT_RESOLUTION,
-    });
-    this.scoreText.setOrigin(0, 0);
+    this.highScoreText = hud.highScoreText;
+    this.scoreText = hud.scoreText;
 
     this.add
       .rectangle(
@@ -121,16 +100,7 @@ export class SnakeScene extends Phaser.Scene {
       .setStrokeStyle(2, 0x243655);
 
     this.graphics = this.add.graphics();
-    this.hintText = this.add
-      .text(portrait ? width / 2 : 480, footerY, '화살표 키로 시작', {
-        color: '#94a3b8',
-        fontFamily: 'Arial, sans-serif',
-        fontSize: `${chrome.smallFontSize}px`,
-        resolution: TEXT_RESOLUTION,
-      })
-      .setOrigin(0.5);
-
-    this.createBackButton(backButtonX, backButtonY);
+    this.hintText = hud.footerText;
 
     if (portrait) {
       this.createTouchControls(width, height);
@@ -338,109 +308,20 @@ export class SnakeScene extends Phaser.Scene {
     });
   }
 
-  private finishGame(message: string): void {
+  private finishGame(_message: string): void {
     this.finished = true;
     this.started = false;
     this.drawBoard();
-    void this.showGameOver(message);
-  }
-
-  private async showGameOver(_message: string): Promise<void> {
-    await submitScore('snake', this.score);
-    const myBest = await fetchMyBestRecord('snake');
-    const portrait = this.isPortrait();
-    const width = this.scale.width;
-    const height = this.scale.height;
-    const panelWidth = portrait ? Math.min(360, width - 24) : 430;
-    const panelHeight = portrait ? 244 : 170;
-    const panelX = width / 2;
-    const panelY = portrait ? Math.round(height * 0.37) : 282;
-    const titleY = portrait ? panelY - 78 : 244;
-    const currentScoreY = portrait ? panelY - 42 : 274;
-    const bestScoreY = portrait ? panelY - 16 : 302;
-    const rankY = portrait ? panelY + 10 : 330;
-    const rankButtonY = portrait ? panelY + 48 : 356;
-    const restartButtonY = portrait ? panelY + 92 : 392;
-    const primaryWidth = portrait ? 204 : 190;
-    const buttonHeight = portrait ? 38 : 40;
-    const bestScoreText = myBest ? `나의 최고점수  ${myBest.score}` : '나의 최고점수  없음';
-    const bestRankText = myBest ? `글로벌 등수  ${myBest.rank}위` : '글로벌 등수  -';
-
-    this.add.rectangle(panelX + 3, panelY + 4, panelWidth, panelHeight, 0x020617, 0.55).setDepth(999);
-    this.add.rectangle(panelX, panelY, panelWidth, panelHeight, 0x060d18, 0.96).setStrokeStyle(2, 0x334155).setDepth(1000);
-
-    this.add.text(panelX, titleY, '게임 오버', {
-      color: '#f8fafc',
-      fontFamily: 'Arial, sans-serif',
-      fontSize: portrait ? '26px' : '30px',
-      fontStyle: 'bold',
-      resolution: TEXT_RESOLUTION,
-    }).setOrigin(0.5).setDepth(1001);
-
-    this.add.text(panelX, currentScoreY, `지금점수  ${this.score}`, {
-      color: '#cbd5e1',
-      fontFamily: 'Arial, sans-serif',
-      fontSize: portrait ? '14px' : '16px',
-      resolution: TEXT_RESOLUTION,
-    }).setOrigin(0.5).setDepth(1001);
-
-    this.add.text(panelX, bestScoreY, bestScoreText, {
-      color: '#f8fafc',
-      fontFamily: 'Arial, sans-serif',
-      fontSize: portrait ? '13px' : '15px',
-      fontStyle: 'bold',
-      resolution: TEXT_RESOLUTION,
-    }).setOrigin(0.5).setDepth(1001);
-
-    this.add.text(panelX, rankY, bestRankText, {
-      color: '#facc15',
-      fontFamily: 'Arial, sans-serif',
-      fontSize: portrait ? '13px' : '15px',
-      fontStyle: 'bold',
-      resolution: TEXT_RESOLUTION,
-    }).setOrigin(0.5).setDepth(1001);
-
-    const rankButton = this.add.rectangle(panelX, rankButtonY, primaryWidth, buttonHeight, 0x1d4ed8, 0.96)
-      .setStrokeStyle(3, 0x93c5fd)
-      .setInteractive({ useHandCursor: true })
-      .setDepth(1002);
-    rankButton.on('pointerdown', () => {
-      this.scene.start('RankScene', { gameKey: 'snake' });
+    void showGameOverPanel(this, {
+      gameKey: 'snake',
+      score: this.score,
+      onRank: () => {
+        this.scene.start('RankScene', { gameKey: 'snake' });
+      },
+      onRestart: () => {
+        this.restart();
+      },
     });
-    rankButton.on('pointerover', () => {
-      rankButton.setFillStyle(0x2563eb, 0.98).setStrokeStyle(3, 0xbfdbfe);
-    });
-    rankButton.on('pointerout', () => {
-      rankButton.setFillStyle(0x1d4ed8, 0.96).setStrokeStyle(3, 0x93c5fd);
-    });
-    this.add.text(panelX, rankButtonY, '순위 확인하기', {
-      color: '#eff6ff',
-      fontFamily: 'Arial, sans-serif',
-      fontSize: portrait ? '14px' : '15px',
-      fontStyle: 'bold',
-      resolution: TEXT_RESOLUTION,
-    }).setOrigin(0.5).setDepth(1003);
-
-    const restartButton = this.add.rectangle(panelX, restartButtonY, primaryWidth, buttonHeight, 0x2563eb, 1)
-      .setStrokeStyle(3, 0xbfdbfe)
-      .setInteractive({ useHandCursor: true })
-      .setDepth(1002);
-    restartButton.on('pointerdown', () => {
-      this.restart();
-    });
-    restartButton.on('pointerover', () => {
-      restartButton.setFillStyle(0x3b82f6, 1).setStrokeStyle(3, 0xffffff);
-    });
-    restartButton.on('pointerout', () => {
-      restartButton.setFillStyle(0x2563eb, 1).setStrokeStyle(3, 0xbfdbfe);
-    });
-    this.add.text(panelX, restartButtonY, '다시 시작', {
-      color: '#eff6ff',
-      fontFamily: 'Arial, sans-serif',
-      fontSize: portrait ? '15px' : '16px',
-      fontStyle: 'bold',
-      resolution: TEXT_RESOLUTION,
-    }).setOrigin(0.5).setDepth(1003);
   }
 
   private updateHighScore(): void {
@@ -523,36 +404,6 @@ export class SnakeScene extends Phaser.Scene {
     createButton(centerX - buttonSize - buttonGap, centerY, '←', this.turnLeft.bind(this));
     createButton(centerX + buttonSize + buttonGap, centerY, '→', this.turnRight.bind(this));
     createButton(centerX, centerY + buttonSize + buttonGap, '↓', this.turnDown.bind(this));
-  }
-
-  private createBackButton(x: number, y: number): void {
-    const buttonWidth = 96;
-    const buttonHeight = 34;
-
-    const button = this.add
-      .rectangle(x, y, buttonWidth, buttonHeight, 0x111c30, 0.9)
-      .setStrokeStyle(2, 0x334155)
-      .setInteractive({ useHandCursor: true });
-
-    button.on('pointerdown', () => {
-      this.openMenu();
-    });
-    button.on('pointerover', () => {
-      button.setFillStyle(0x1a2a45, 0.96).setStrokeStyle(2, 0x60a5fa);
-    });
-    button.on('pointerout', () => {
-      button.setFillStyle(0x111c30, 0.9).setStrokeStyle(2, 0x334155);
-    });
-
-    this.add
-      .text(x, y, '뒤로가기', {
-        color: '#f8fafc',
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '14px',
-        fontStyle: 'bold',
-        resolution: TEXT_RESOLUTION,
-      })
-      .setOrigin(0.5);
   }
 
   private restart(): void {
