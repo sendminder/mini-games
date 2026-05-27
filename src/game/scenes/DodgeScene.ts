@@ -9,16 +9,20 @@ type FallingObstacle = {
   speedOffset: number;
 };
 
-const FIELD = {
+type FieldLayout = {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+};
+
+const LANDSCAPE_FIELD: FieldLayout = {
   left: 150,
   right: 810,
   top: 92,
   bottom: 474,
-} as const;
+};
 
-const FIELD_WIDTH = FIELD.right - FIELD.left;
-const GROUND_Y = FIELD.bottom - 16;
-const PLAYER_Y = GROUND_Y - 27;
 const PLAYER_HALF_WIDTH = 15;
 const PLAYER_HALF_HEIGHT = 27;
 const PLAYER_ACCELERATION = 980;
@@ -31,12 +35,15 @@ const INITIAL_SPAWN_DELAY = 680;
 const MIN_SPAWN_DELAY = 195;
 
 export class DodgeScene extends Phaser.Scene {
+  private field: FieldLayout = { ...LANDSCAPE_FIELD };
   private graphics!: Phaser.GameObjects.Graphics;
   private scoreText!: Phaser.GameObjects.Text;
   private highScoreText!: Phaser.GameObjects.Text;
   private timeText!: Phaser.GameObjects.Text;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
-  private playerX = (FIELD.left + FIELD.right) / 2;
+  private virtualLeft = false;
+  private virtualRight = false;
+  private playerX = 0;
   private playerVelocity = 0;
   private facingDirection = 1;
   private runPhase = 0;
@@ -55,38 +62,55 @@ export class DodgeScene extends Phaser.Scene {
   create(): void {
     configureHiDpiCamera(this.cameras.main);
     this.cameras.main.setBackgroundColor('#08111f');
+    this.field = this.getFieldLayout();
     this.resetState();
     this.highScore = getDodgeHighScore();
+    const portrait = this.isPortrait();
+    const width = this.scale.width;
+    const height = this.scale.height;
+    const titleX = portrait ? 24 : 150;
+    const titleY = portrait ? 26 : 34;
+    const highScoreX = portrait ? width - 24 : 810;
+    const scoreX = portrait ? width - 24 : 810;
+    const timeX = portrait ? width / 2 : 480;
+    const timeY = portrait ? 60 : 46;
+    const scoreY = portrait ? 44 : 53;
+    const footerY = portrait ? height - 34 : 509;
+    const backButtonX = width - 56;
+    const backButtonY = portrait ? 76 : 48;
+    const hintText = portrait
+      ? '좌/우 버튼 또는 키보드  |  양 끝은 연결됨'
+      : '← → 길게 눌러 가속  |  양 끝은 연결됨';
 
-    this.add.text(150, 34, '똥피하기', {
+    this.add.text(titleX, titleY, '똥피하기', {
       color: '#f8fafc',
       fontFamily: 'Arial, sans-serif',
-      fontSize: '27px',
+      fontSize: portrait ? '22px' : '27px',
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });
 
-    this.timeText = this.add.text(480, 46, '생존  0.0초', {
+    this.timeText = this.add.text(timeX, timeY, '생존  0.0초', {
       color: '#94a3b8',
       fontFamily: 'Arial, sans-serif',
-      fontSize: '16px',
+      fontSize: portrait ? '13px' : '16px',
       resolution: TEXT_RESOLUTION,
     });
     this.timeText.setOrigin(0.5);
 
-    this.highScoreText = this.add.text(810, 30, `최고  ${this.highScore}`, {
+    this.highScoreText = this.add.text(highScoreX, portrait ? 24 : 30, `최고  ${this.highScore}`, {
       color: '#facc15',
       fontFamily: 'Arial, sans-serif',
-      fontSize: '15px',
+      fontSize: portrait ? '12px' : '15px',
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });
     this.highScoreText.setOrigin(1, 0);
 
-    this.scoreText = this.add.text(810, 53, '피함  0', {
+    this.scoreText = this.add.text(scoreX, scoreY, '피함  0', {
       color: '#f8fafc',
       fontFamily: 'Arial, sans-serif',
-      fontSize: '18px',
+      fontSize: portrait ? '15px' : '18px',
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });
@@ -94,10 +118,10 @@ export class DodgeScene extends Phaser.Scene {
 
     this.add
       .rectangle(
-        (FIELD.left + FIELD.right) / 2,
-        (FIELD.top + FIELD.bottom) / 2,
-        FIELD_WIDTH + 4,
-        FIELD.bottom - FIELD.top + 4,
+        (this.field.left + this.field.right) / 2,
+        (this.field.top + this.field.bottom) / 2,
+        this.fieldWidth + 4,
+        this.field.bottom - this.field.top + 4,
         0x0d1727,
       )
       .setStrokeStyle(2, 0x243655);
@@ -105,14 +129,18 @@ export class DodgeScene extends Phaser.Scene {
     this.graphics = this.add.graphics();
 
     this.add
-      .text(480, 509, '← → 길게 눌러 가속  |  양 끝은 연결됨  |  Esc: 목록  R: 재시작', {
+      .text(portrait ? width / 2 : 480, footerY, hintText, {
         color: '#94a3b8',
         fontFamily: 'Arial, sans-serif',
-        fontSize: '15px',
+        fontSize: portrait ? '12px' : '15px',
         resolution: TEXT_RESOLUTION,
       })
       .setOrigin(0.5);
 
+    this.createBackButton(backButtonX, backButtonY);
+    if (portrait) {
+      this.createTouchControls();
+    }
     this.bindControls();
     this.drawGame();
   }
@@ -137,7 +165,7 @@ export class DodgeScene extends Phaser.Scene {
   }
 
   private resetState(): void {
-    this.playerX = (FIELD.left + FIELD.right) / 2;
+    this.playerX = (this.field.left + this.field.right) / 2;
     this.playerVelocity = 0;
     this.facingDirection = 1;
     this.runPhase = 0;
@@ -159,11 +187,9 @@ export class DodgeScene extends Phaser.Scene {
     keyboard.addCapture(['LEFT', 'RIGHT']);
     this.cursors = keyboard.createCursorKeys();
     keyboard.on('keydown-R', this.restart, this);
-    keyboard.on('keydown-ESC', this.openMenu, this);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       keyboard.off('keydown-R', this.restart, this);
-      keyboard.off('keydown-ESC', this.openMenu, this);
     });
   }
 
@@ -173,10 +199,12 @@ export class DodgeScene extends Phaser.Scene {
     }
 
     let inputDirection = 0;
+    const leftDown = this.cursors.left.isDown || this.virtualLeft;
+    const rightDown = this.cursors.right.isDown || this.virtualRight;
 
-    if (this.cursors.left.isDown && !this.cursors.right.isDown) {
+    if (leftDown && !rightDown) {
       inputDirection = -1;
-    } else if (this.cursors.right.isDown && !this.cursors.left.isDown) {
+    } else if (rightDown && !leftDown) {
       inputDirection = 1;
     }
 
@@ -208,11 +236,11 @@ export class DodgeScene extends Phaser.Scene {
     this.runPhase += Math.abs(this.playerVelocity) * step * 0.058;
     this.turnAnimation = Math.max(0, this.turnAnimation - step * 4.8);
 
-    while (this.playerX < FIELD.left) {
-      this.playerX += FIELD_WIDTH;
+    while (this.playerX < this.field.left) {
+      this.playerX += this.fieldWidth;
     }
-    while (this.playerX > FIELD.right) {
-      this.playerX -= FIELD_WIDTH;
+    while (this.playerX > this.field.right) {
+      this.playerX -= this.fieldWidth;
     }
   }
 
@@ -248,7 +276,7 @@ export class DodgeScene extends Phaser.Scene {
         return;
       }
 
-      if (obstacle.y - obstacle.radius > FIELD.bottom) {
+      if (obstacle.y - obstacle.radius > this.field.bottom) {
         this.score += 1;
         this.scoreText.setText(`피함  ${this.score}`);
         this.updateHighScore();
@@ -270,9 +298,9 @@ export class DodgeScene extends Phaser.Scene {
 
   private isColliding(obstacle: FallingObstacle): boolean {
     const directDistance = Math.abs(obstacle.x - this.playerX);
-    const wrappedDistance = FIELD_WIDTH - directDistance;
+    const wrappedDistance = this.fieldWidth - directDistance;
     const horizontalDistance = Math.min(directDistance, wrappedDistance);
-    const verticalDistance = Math.abs(obstacle.y - PLAYER_Y);
+    const verticalDistance = Math.abs(obstacle.y - this.playerY);
 
     return (
       horizontalDistance < obstacle.radius + PLAYER_HALF_WIDTH - 4 &&
@@ -284,24 +312,18 @@ export class DodgeScene extends Phaser.Scene {
     this.graphics.clear();
 
     this.graphics.lineStyle(1, 0x172439, 1);
-    for (let y = FIELD.top + 38; y < FIELD.bottom; y += 38) {
-      this.graphics.lineBetween(FIELD.left, y, FIELD.right, y);
+    for (let y = this.field.top + this.gridSpacing; y < this.field.bottom; y += this.gridSpacing) {
+      this.graphics.lineBetween(this.field.left, y, this.field.right, y);
     }
 
     this.graphics.lineStyle(2, 0x334155, 1);
-    this.graphics.lineBetween(FIELD.left, GROUND_Y, FIELD.right, GROUND_Y);
+    this.graphics.lineBetween(this.field.left, this.groundY, this.field.right, this.groundY);
 
     for (const obstacle of this.obstacles) {
       this.drawPoop(obstacle.x, obstacle.y, obstacle.radius);
     }
 
     this.drawPlayer(this.playerX);
-
-    if (this.playerX - PLAYER_HALF_WIDTH < FIELD.left) {
-      this.drawPlayer(this.playerX + FIELD_WIDTH);
-    } else if (this.playerX + PLAYER_HALF_WIDTH > FIELD.right) {
-      this.drawPlayer(this.playerX - FIELD_WIDTH);
-    }
   }
 
   private drawPoop(x: number, y: number, radius: number): void {
@@ -324,11 +346,11 @@ export class DodgeScene extends Phaser.Scene {
     const bob = Math.abs(Math.cos(this.runPhase)) * speedRatio * 2;
     const lean = this.facingDirection * (speedRatio * 4 + this.turnAnimation * 5);
     const headX = x + lean;
-    const headY = GROUND_Y - 45 - bob;
+    const headY = this.groundY - 45 - bob;
     const shoulderX = x + lean * 0.7;
-    const shoulderY = GROUND_Y - 34 - bob;
+    const shoulderY = this.groundY - 34 - bob;
     const hipX = x - lean * 0.2;
-    const hipY = GROUND_Y - 19 - bob;
+    const hipY = this.groundY - 19 - bob;
     const forwardLegX = x + stride;
     const backLegX = x - stride;
     const armSwing = -stride * 0.8;
@@ -336,8 +358,8 @@ export class DodgeScene extends Phaser.Scene {
     if (this.turnAnimation > 0.1) {
       this.graphics.lineStyle(2, 0xfacc15, this.turnAnimation * 0.8);
       const skidDirection = -this.facingDirection;
-      this.graphics.lineBetween(x + skidDirection * 9, GROUND_Y + 1, x + skidDirection * 22, GROUND_Y + 1);
-      this.graphics.lineBetween(x + skidDirection * 5, GROUND_Y + 5, x + skidDirection * 16, GROUND_Y + 5);
+      this.graphics.lineBetween(x + skidDirection * 9, this.groundY + 1, x + skidDirection * 22, this.groundY + 1);
+      this.graphics.lineBetween(x + skidDirection * 5, this.groundY + 5, x + skidDirection * 16, this.groundY + 5);
     }
 
     this.graphics.lineStyle(4, 0x38bdf8, 1);
@@ -354,8 +376,8 @@ export class DodgeScene extends Phaser.Scene {
       shoulderX - armSwing,
       shoulderY + 13,
     );
-    this.graphics.lineBetween(hipX, hipY, forwardLegX, GROUND_Y);
-    this.graphics.lineBetween(hipX, hipY, backLegX, GROUND_Y);
+    this.graphics.lineBetween(hipX, hipY, forwardLegX, this.groundY);
+    this.graphics.lineBetween(hipX, hipY, backLegX, this.groundY);
 
     this.graphics.fillStyle(0xffdbac);
     this.graphics.fillCircle(headX, headY, 8);
@@ -369,8 +391,8 @@ export class DodgeScene extends Phaser.Scene {
     const radius = Phaser.Math.Between(12, 19);
 
     this.obstacles.push({
-      x: Phaser.Math.Between(FIELD.left + radius, FIELD.right - radius),
-      y: FIELD.top - radius - yOffset,
+      x: Phaser.Math.Between(this.field.left + radius, this.field.right - radius),
+      y: this.field.top - radius - yOffset,
       radius,
       speedOffset: Phaser.Math.Between(-15, 58),
     });
@@ -396,36 +418,185 @@ export class DodgeScene extends Phaser.Scene {
   private finishGame(): void {
     this.finished = true;
     this.drawGame();
+    const portrait = this.isPortrait();
+    const width = this.scale.width;
+    const height = this.scale.height;
+    const panelWidth = portrait ? Math.min(360, width - 32) : 406;
+    const panelHeight = portrait ? 178 : 176;
+    const panelX = width / 2;
+    const panelY = portrait ? Math.round(height * 0.47) : 285;
+    const titleY = portrait ? panelY - 42 : 246;
+    const bodyY = portrait ? panelY - 2 : 288;
+    const footerY = portrait ? panelY + 40 : 328;
 
     this.add
-      .rectangle(480, 285, 406, 176, 0x060d18, 0.96)
+      .rectangle(panelX, panelY, panelWidth, panelHeight, 0x060d18, 0.96)
       .setStrokeStyle(2, 0x334155);
     this.add
-      .text(480, 246, '게임 오버', {
+      .text(panelX, titleY, '게임 오버', {
         color: '#f8fafc',
         fontFamily: 'Arial, sans-serif',
-        fontSize: '30px',
+        fontSize: portrait ? '26px' : '30px',
         fontStyle: 'bold',
         resolution: TEXT_RESOLUTION,
       })
       .setOrigin(0.5);
     this.add
-      .text(480, 288, `피한 똥 ${this.score}개  |  ${(this.elapsedMs / 1000).toFixed(1)}초 생존`, {
+      .text(panelX, bodyY, `피한 똥 ${this.score}개  |  ${(this.elapsedMs / 1000).toFixed(1)}초 생존`, {
         color: '#cbd5e1',
         fontFamily: 'Arial, sans-serif',
-        fontSize: '16px',
+        fontSize: portrait ? '14px' : '16px',
         resolution: TEXT_RESOLUTION,
       })
       .setOrigin(0.5);
     this.add
-      .text(480, 328, 'R: 다시 시작   Esc: 게임 목록', {
+      .text(panelX, footerY, 'R: 다시 시작   뒤로가기 버튼', {
         color: '#f59e0b',
         fontFamily: 'Arial, sans-serif',
-        fontSize: '16px',
+        fontSize: portrait ? '14px' : '16px',
         fontStyle: 'bold',
         resolution: TEXT_RESOLUTION,
       })
       .setOrigin(0.5);
+  }
+
+  private createTouchControls(): void {
+    const width = this.scale.width;
+    const height = this.scale.height;
+    const centerX = width / 2;
+    const centerY = height - 132;
+    const buttonWidth = 128;
+    const buttonHeight = 72;
+    const gap = 20;
+    const createButton = (
+      x: number,
+      y: number,
+      label: string,
+      onDown: () => void,
+      onUp: () => void,
+    ): void => {
+      const button = this.add
+        .rectangle(x, y, buttonWidth, buttonHeight, 0x111c30, 0.88)
+        .setStrokeStyle(2, 0x334155)
+        .setInteractive({ useHandCursor: true });
+
+      button.on('pointerdown', () => {
+        onDown();
+      });
+      button.on('pointerup', () => {
+        onUp();
+      });
+      button.on('pointerout', () => {
+        onUp();
+        button.setFillStyle(0x111c30, 0.88).setStrokeStyle(2, 0x334155);
+      });
+      button.on('pointerover', () => {
+        button.setFillStyle(0x1a2a45, 0.95).setStrokeStyle(2, 0x60a5fa);
+      });
+
+      this.add
+        .text(x, y, label, {
+          color: '#f8fafc',
+          fontFamily: 'Arial, sans-serif',
+          fontSize: '17px',
+          fontStyle: 'bold',
+          resolution: TEXT_RESOLUTION,
+        })
+        .setOrigin(0.5);
+    };
+
+    createButton(
+      centerX - buttonWidth / 2 - gap,
+      centerY,
+      '왼쪽',
+      () => {
+        this.virtualLeft = true;
+      },
+      () => {
+        this.virtualLeft = false;
+      },
+    );
+    createButton(
+      centerX + buttonWidth / 2 + gap,
+      centerY,
+      '오른쪽',
+      () => {
+        this.virtualRight = true;
+      },
+      () => {
+        this.virtualRight = false;
+      },
+    );
+  }
+
+  private createBackButton(x: number, y: number): void {
+    const buttonWidth = 96;
+    const buttonHeight = 34;
+
+    const button = this.add
+      .rectangle(x, y, buttonWidth, buttonHeight, 0x111c30, 0.9)
+      .setStrokeStyle(2, 0x334155)
+      .setInteractive({ useHandCursor: true });
+
+    button.on('pointerdown', () => {
+      this.openMenu();
+    });
+    button.on('pointerover', () => {
+      button.setFillStyle(0x1a2a45, 0.96).setStrokeStyle(2, 0x60a5fa);
+    });
+    button.on('pointerout', () => {
+      button.setFillStyle(0x111c30, 0.9).setStrokeStyle(2, 0x334155);
+    });
+
+    this.add
+      .text(x, y, '뒤로가기', {
+        color: '#f8fafc',
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '14px',
+        fontStyle: 'bold',
+        resolution: TEXT_RESOLUTION,
+      })
+      .setOrigin(0.5);
+  }
+
+  private get fieldWidth(): number {
+    return this.field.right - this.field.left;
+  }
+
+  private get groundY(): number {
+    return this.field.bottom - 16;
+  }
+
+  private get playerY(): number {
+    return this.groundY - 27;
+  }
+
+  private get gridSpacing(): number {
+    return this.isPortrait() ? 46 : 38;
+  }
+
+  private isPortrait(): boolean {
+    return this.scale.height > this.scale.width;
+  }
+
+  private getFieldLayout(): FieldLayout {
+    if (!this.isPortrait()) {
+      return { ...LANDSCAPE_FIELD };
+    }
+
+    const width = this.scale.width;
+    const height = this.scale.height;
+    const fieldWidth = Math.min(width - 24, 520);
+    const left = Math.round((width - fieldWidth) / 2);
+    const top = 112;
+    const bottom = Math.max(top + 380, Math.floor(height - 170));
+
+    return {
+      left,
+      right: left + fieldWidth,
+      top,
+      bottom,
+    };
   }
 
   private restart(): void {

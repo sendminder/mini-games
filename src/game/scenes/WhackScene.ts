@@ -17,15 +17,22 @@ type Hole = {
   tweenOut: number;
 };
 
-const BOARD = {
-  left: 156,
-  top: 118,
-  cell: 152,
-  gap: 18,
-  size: 3,
-} as const;
+type BoardLayout = {
+  left: number;
+  top: number;
+  cell: number;
+  gap: number;
+  size: number;
+};
 
-const BOARD_SIZE = BOARD.size * BOARD.cell + (BOARD.size - 1) * BOARD.gap;
+const LANDSCAPE_BOARD: BoardLayout = {
+  left: 288,
+  top: 96,
+  cell: 120,
+  gap: 12,
+  size: 3,
+};
+
 const HOLE_RADIUS = 46;
 const BASE_SHOW_MS = 1050;
 const MIN_SHOW_MS = 430;
@@ -34,6 +41,7 @@ const MIN_SPAWN_MS = 340;
 const START_LIVES = 3;
 
 export class WhackScene extends Phaser.Scene {
+  private board: BoardLayout = { ...LANDSCAPE_BOARD };
   private graphics!: Phaser.GameObjects.Graphics;
   private scoreText!: Phaser.GameObjects.Text;
   private highScoreText!: Phaser.GameObjects.Text;
@@ -56,60 +64,79 @@ export class WhackScene extends Phaser.Scene {
     configureHiDpiCamera(this.cameras.main);
     this.cameras.main.setBackgroundColor('#08111f');
     this.highScore = getWhackHighScore();
+    this.board = this.getBoardLayout();
     this.resetState();
     this.createBoard();
+    const portrait = this.isPortrait();
+    const width = this.scale.width;
+    const height = this.scale.height;
+    const titleX = portrait ? 24 : 156;
+    const titleY = portrait ? 26 : 34;
+    const highScoreX = portrait ? width - 24 : 810;
+    const scoreX = portrait ? width - 24 : 810;
+    const timeX = portrait ? width / 2 : 480;
+    const timeY = portrait ? 60 : 46;
+    const scoreY = portrait ? 44 : 53;
+    const lifeY = portrait ? 86 : 515;
+    const footerY = portrait ? height - 32 : 515;
+    const footerText = portrait
+      ? '두더지 탭 / 클릭  |  폭탄은 피하기'
+      : '두더지 탭 / 클릭  |  폭탄은 피하기';
+    const backButtonX = width - 56;
+    const backButtonY = portrait ? 76 : 48;
 
-    this.add.text(156, 34, '두더지 잡기', {
+    this.add.text(titleX, titleY, '두더지 잡기', {
       color: '#f8fafc',
       fontFamily: 'Arial, sans-serif',
-      fontSize: '27px',
+      fontSize: portrait ? '22px' : '27px',
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });
 
-    this.timeText = this.add.text(480, 46, '경과  0.0초', {
+    this.timeText = this.add.text(timeX, timeY, '경과  0.0초', {
       color: '#94a3b8',
       fontFamily: 'Arial, sans-serif',
-      fontSize: '16px',
+      fontSize: portrait ? '13px' : '16px',
       resolution: TEXT_RESOLUTION,
     });
     this.timeText.setOrigin(0.5);
 
-    this.highScoreText = this.add.text(810, 30, `최고  ${this.highScore}`, {
+    this.highScoreText = this.add.text(highScoreX, portrait ? 24 : 30, `최고  ${this.highScore}`, {
       color: '#facc15',
       fontFamily: 'Arial, sans-serif',
-      fontSize: '15px',
+      fontSize: portrait ? '12px' : '15px',
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });
     this.highScoreText.setOrigin(1, 0);
 
-    this.scoreText = this.add.text(810, 53, '점수  0', {
+    this.scoreText = this.add.text(scoreX, scoreY, '점수  0', {
       color: '#f8fafc',
       fontFamily: 'Arial, sans-serif',
-      fontSize: '18px',
+      fontSize: portrait ? '15px' : '18px',
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });
     this.scoreText.setOrigin(1, 0);
 
-    this.lifeText = this.add.text(156, 515, '목숨  3', {
+    this.lifeText = this.add.text(titleX, lifeY, '목숨  3', {
       color: '#f59e0b',
       fontFamily: 'Arial, sans-serif',
-      fontSize: '16px',
+      fontSize: portrait ? '13px' : '16px',
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });
 
     this.add
-      .text(480, 515, '두더지 탭 / 클릭  |  폭탄은 피하기  |  Esc: 목록  R: 재시작', {
+      .text(portrait ? width / 2 : 480, footerY, footerText, {
         color: '#94a3b8',
         fontFamily: 'Arial, sans-serif',
-        fontSize: '15px',
+        fontSize: portrait ? '12px' : '15px',
         resolution: TEXT_RESOLUTION,
       })
       .setOrigin(0.5);
 
+    this.createBackButton(backButtonX, backButtonY);
     this.bindControls();
     this.drawBoard();
     this.spawnEntity();
@@ -170,11 +197,13 @@ export class WhackScene extends Phaser.Scene {
   }
 
   private createBoard(): void {
-    const boardX = BOARD.left + BOARD_SIZE / 2;
-    const boardY = BOARD.top + BOARD_SIZE / 2;
+    const boardWidth = this.board.size * this.board.cell + (this.board.size - 1) * this.board.gap;
+    const boardHeight = boardWidth;
+    const boardX = this.board.left + boardWidth / 2;
+    const boardY = this.board.top + boardHeight / 2;
 
     this.add
-      .rectangle(boardX, boardY, BOARD_SIZE + 8, BOARD_SIZE + 8, 0x0d1727)
+      .rectangle(boardX, boardY, boardWidth + 8, boardHeight + 8, 0x0d1727)
       .setStrokeStyle(2, 0x243655);
 
     this.graphics = this.add.graphics();
@@ -182,11 +211,11 @@ export class WhackScene extends Phaser.Scene {
 
     this.holes = [];
 
-    for (let row = 0; row < BOARD.size; row += 1) {
-      for (let column = 0; column < BOARD.size; column += 1) {
-        const x = BOARD.left + column * (BOARD.cell + BOARD.gap) + BOARD.cell / 2;
-        const y = BOARD.top + row * (BOARD.cell + BOARD.gap) + BOARD.cell / 2;
-        const target = this.add.zone(x, y, BOARD.cell, BOARD.cell);
+    for (let row = 0; row < this.board.size; row += 1) {
+      for (let column = 0; column < this.board.size; column += 1) {
+        const x = this.board.left + column * (this.board.cell + this.board.gap) + this.board.cell / 2;
+        const y = this.board.top + row * (this.board.cell + this.board.gap) + this.board.cell / 2;
+        const target = this.add.zone(x, y, this.board.cell, this.board.cell);
         const hole: Hole = {
           x,
           y,
@@ -218,11 +247,9 @@ export class WhackScene extends Phaser.Scene {
     }
 
     keyboard.on('keydown-R', this.restart, this);
-    keyboard.on('keydown-ESC', this.openMenu, this);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       keyboard.off('keydown-R', this.restart, this);
-      keyboard.off('keydown-ESC', this.openMenu, this);
     });
   }
 
@@ -269,10 +296,10 @@ export class WhackScene extends Phaser.Scene {
     this.graphics.clear();
     this.graphics.lineStyle(1, 0x172439, 1);
 
-    for (let row = 0; row < BOARD.size; row += 1) {
-      for (let column = 0; column < BOARD.size; column += 1) {
-        const x = BOARD.left + column * (BOARD.cell + BOARD.gap) + BOARD.cell / 2;
-        const y = BOARD.top + row * (BOARD.cell + BOARD.gap) + BOARD.cell / 2;
+    for (let row = 0; row < this.board.size; row += 1) {
+      for (let column = 0; column < this.board.size; column += 1) {
+        const x = this.board.left + column * (this.board.cell + this.board.gap) + this.board.cell / 2;
+        const y = this.board.top + row * (this.board.cell + this.board.gap) + this.board.cell / 2;
 
         this.graphics.fillStyle(0x0a1321);
         this.graphics.fillCircle(x, y + 8, HOLE_RADIUS);
@@ -337,36 +364,80 @@ export class WhackScene extends Phaser.Scene {
   private finishGame(): void {
     this.finished = true;
     this.updateHighScore();
+    const portrait = this.isPortrait();
+    const width = this.scale.width;
+    const height = this.scale.height;
+    const panelWidth = portrait ? Math.min(360, width - 32) : 410;
+    const panelHeight = portrait ? 176 : 174;
+    const panelX = width / 2;
+    const panelY = portrait ? Math.round(height * 0.48) : 286;
+    const titleY = portrait ? panelY - 42 : 247;
+    const bodyY = portrait ? panelY - 2 : 289;
+    const buttonY = portrait ? panelY + 42 : 332;
+    const footerY = portrait ? panelY + 78 : 370;
+    const buttonWidth = portrait ? 146 : 152;
+    const buttonHeight = 38;
 
     this.add
-      .rectangle(480, 284, 410, 174, 0x060d18, 0.96)
-      .setStrokeStyle(2, 0x334155);
+      .rectangle(panelX, panelY, panelWidth, panelHeight, 0x060d18, 0.96)
+      .setStrokeStyle(2, 0x334155)
+      .setDepth(100);
     this.add
-      .text(480, 245, '게임 오버', {
+      .text(panelX, titleY, '게임 오버', {
         color: '#f8fafc',
         fontFamily: 'Arial, sans-serif',
-        fontSize: '30px',
+        fontSize: portrait ? '26px' : '30px',
         fontStyle: 'bold',
         resolution: TEXT_RESOLUTION,
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(101);
     this.add
-      .text(480, 287, `점수 ${this.score}  |  ${(this.elapsedMs / 1000).toFixed(1)}초`, {
+      .text(panelX, bodyY, `점수 ${this.score}  |  ${(this.elapsedMs / 1000).toFixed(1)}초`, {
         color: '#cbd5e1',
         fontFamily: 'Arial, sans-serif',
-        fontSize: '16px',
+        fontSize: portrait ? '14px' : '16px',
         resolution: TEXT_RESOLUTION,
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(101);
+
+    const restartButton = this.add
+      .rectangle(panelX, buttonY, buttonWidth, buttonHeight, 0x1d4ed8, 0.96)
+      .setStrokeStyle(2, 0x93c5fd)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(101);
+    restartButton.on('pointerdown', () => {
+      this.restart();
+    });
+    restartButton.on('pointerover', () => {
+      restartButton.setFillStyle(0x2563eb, 0.98).setStrokeStyle(2, 0xbfdbfe);
+    });
+    restartButton.on('pointerout', () => {
+      restartButton.setFillStyle(0x1d4ed8, 0.96).setStrokeStyle(2, 0x93c5fd);
+    });
+
     this.add
-      .text(480, 327, 'R: 다시 시작   Esc: 게임 목록', {
-        color: '#60a5fa',
+      .text(panelX, buttonY, '다시 시작', {
+        color: '#eff6ff',
         fontFamily: 'Arial, sans-serif',
-        fontSize: '16px',
+        fontSize: portrait ? '15px' : '16px',
         fontStyle: 'bold',
         resolution: TEXT_RESOLUTION,
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(102);
+
+    this.add
+      .text(panelX, footerY, '뒤로가기 버튼으로 목록으로 돌아갈 수 있습니다', {
+        color: '#60a5fa',
+        fontFamily: 'Arial, sans-serif',
+        fontSize: portrait ? '12px' : '14px',
+        fontStyle: 'bold',
+        resolution: TEXT_RESOLUTION,
+      })
+      .setOrigin(0.5)
+      .setDepth(101);
   }
 
   private restart(): void {
@@ -375,5 +446,58 @@ export class WhackScene extends Phaser.Scene {
 
   private openMenu(): void {
     this.scene.start('MenuScene');
+  }
+
+  private createBackButton(x: number, y: number): void {
+    const buttonWidth = 96;
+    const buttonHeight = 34;
+
+    const button = this.add
+      .rectangle(x, y, buttonWidth, buttonHeight, 0x111c30, 0.9)
+      .setStrokeStyle(2, 0x334155)
+      .setInteractive({ useHandCursor: true });
+
+    button.on('pointerdown', () => {
+      this.openMenu();
+    });
+    button.on('pointerover', () => {
+      button.setFillStyle(0x1a2a45, 0.96).setStrokeStyle(2, 0x60a5fa);
+    });
+    button.on('pointerout', () => {
+      button.setFillStyle(0x111c30, 0.9).setStrokeStyle(2, 0x334155);
+    });
+
+    this.add
+      .text(x, y, '뒤로가기', {
+        color: '#f8fafc',
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '14px',
+        fontStyle: 'bold',
+        resolution: TEXT_RESOLUTION,
+      })
+      .setOrigin(0.5);
+  }
+
+  private isPortrait(): boolean {
+    return this.scale.height > this.scale.width;
+  }
+
+  private getBoardLayout(): BoardLayout {
+    if (!this.isPortrait()) {
+      return { ...LANDSCAPE_BOARD };
+    }
+
+    const width = this.scale.width;
+    const gap = 10;
+    const cell = Math.min(120, Math.floor((width - 60 - gap * 2) / 3));
+    const boardWidth = 3 * cell + 2 * gap;
+
+    return {
+      left: Math.round((width - boardWidth) / 2),
+      top: Math.round(Math.max(150, this.scale.height * 0.16)),
+      cell,
+      gap,
+      size: 3,
+    };
   }
 }

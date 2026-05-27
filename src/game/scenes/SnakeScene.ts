@@ -7,13 +7,21 @@ type Cell = {
   y: number;
 };
 
-const BOARD = {
+type BoardLayout = {
+  columns: number;
+  rows: number;
+  cellSize: number;
+  x: number;
+  y: number;
+};
+
+const LANDSCAPE_BOARD: BoardLayout = {
   columns: 26,
   rows: 16,
   cellSize: 24,
   x: 168,
   y: 100,
-} as const;
+};
 
 const INITIAL_MOVE_DELAY = 125;
 const SPEED_UP_PER_APPLE = 5;
@@ -27,6 +35,7 @@ const DIRECTIONS = {
 } as const;
 
 export class SnakeScene extends Phaser.Scene {
+  private board: BoardLayout = { ...LANDSCAPE_BOARD };
   private snake: Cell[] = [];
   private apple: Cell | null = null;
   private direction: Cell = { ...DIRECTIONS.right };
@@ -48,31 +57,43 @@ export class SnakeScene extends Phaser.Scene {
   create(): void {
     configureHiDpiCamera(this.cameras.main);
     this.cameras.main.setBackgroundColor('#08111f');
+    this.board = this.getBoardLayout();
     this.resetState();
     this.highScore = getSnakeHighScore();
+    const portrait = this.isPortrait();
+    const width = this.scale.width;
+    const height = this.scale.height;
+    const titleX = portrait ? 24 : 168;
+    const titleY = portrait ? 26 : 33;
+    const highScoreX = portrait ? width - 24 : 792;
+    const scoreX = portrait ? width - 24 : 792;
+    const scoreY = portrait ? 44 : 53;
+    const footerY = portrait ? height - 32 : 514;
+    const backButtonX = width - 56;
+    const backButtonY = portrait ? 76 : 48;
 
     this.add
-      .text(168, 33, '사과 먹는 애벌레', {
+      .text(titleX, titleY, '사과 먹는 애벌레', {
         color: '#f8fafc',
         fontFamily: 'Arial, sans-serif',
-        fontSize: '27px',
+        fontSize: portrait ? '22px' : '27px',
         fontStyle: 'bold',
         resolution: TEXT_RESOLUTION,
       });
 
-    this.highScoreText = this.add.text(792, 30, `최고  ${this.highScore}`, {
+    this.highScoreText = this.add.text(highScoreX, portrait ? 24 : 30, `최고  ${this.highScore}`, {
       color: '#facc15',
       fontFamily: 'Arial, sans-serif',
-      fontSize: '15px',
+      fontSize: portrait ? '12px' : '15px',
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });
     this.highScoreText.setOrigin(1, 0);
 
-    this.scoreText = this.add.text(792, 53, '점수  0', {
+    this.scoreText = this.add.text(scoreX, scoreY, '점수  0', {
       color: '#f8fafc',
       fontFamily: 'Arial, sans-serif',
-      fontSize: '18px',
+      fontSize: portrait ? '15px' : '18px',
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });
@@ -80,23 +101,29 @@ export class SnakeScene extends Phaser.Scene {
 
     this.add
       .rectangle(
-        BOARD.x + (BOARD.columns * BOARD.cellSize) / 2,
-        BOARD.y + (BOARD.rows * BOARD.cellSize) / 2,
-        BOARD.columns * BOARD.cellSize + 4,
-        BOARD.rows * BOARD.cellSize + 4,
+        this.board.x + (this.board.columns * this.board.cellSize) / 2,
+        this.board.y + (this.board.rows * this.board.cellSize) / 2,
+        this.board.columns * this.board.cellSize + 4,
+        this.board.rows * this.board.cellSize + 4,
         0x0d1727,
       )
       .setStrokeStyle(2, 0x243655);
 
     this.graphics = this.add.graphics();
     this.hintText = this.add
-      .text(480, 514, '화살표 키로 시작  |  Esc: 목록으로', {
+      .text(portrait ? width / 2 : 480, footerY, '화살표 키로 시작', {
         color: '#94a3b8',
         fontFamily: 'Arial, sans-serif',
-        fontSize: '16px',
+        fontSize: portrait ? '13px' : '16px',
         resolution: TEXT_RESOLUTION,
       })
       .setOrigin(0.5);
+
+    this.createBackButton(backButtonX, backButtonY);
+
+    if (portrait) {
+      this.createTouchControls(width, height);
+    }
 
     this.placeApple();
     this.bindControls();
@@ -112,8 +139,8 @@ export class SnakeScene extends Phaser.Scene {
   }
 
   private resetState(): void {
-    const middleX = Math.floor(BOARD.columns / 2);
-    const middleY = Math.floor(BOARD.rows / 2);
+    const middleX = Math.floor(this.board.columns / 2);
+    const middleY = Math.floor(this.board.rows / 2);
 
     this.snake = [
       { x: middleX, y: middleY },
@@ -142,7 +169,6 @@ export class SnakeScene extends Phaser.Scene {
     keyboard.on('keydown-LEFT', this.turnLeft, this);
     keyboard.on('keydown-RIGHT', this.turnRight, this);
     keyboard.on('keydown-R', this.restart, this);
-    keyboard.on('keydown-ESC', this.openMenu, this);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       keyboard.off('keydown-UP', this.turnUp, this);
@@ -150,7 +176,6 @@ export class SnakeScene extends Phaser.Scene {
       keyboard.off('keydown-LEFT', this.turnLeft, this);
       keyboard.off('keydown-RIGHT', this.turnRight, this);
       keyboard.off('keydown-R', this.restart, this);
-      keyboard.off('keydown-ESC', this.openMenu, this);
     });
   }
 
@@ -181,7 +206,7 @@ export class SnakeScene extends Phaser.Scene {
 
     this.direction = { ...nextDirection };
     this.started = true;
-    this.hintText.setText('Esc: 목록으로  |  R: 다시 시작');
+    this.hintText.setText('R: 다시 시작');
     this.advanceSnake(this.time.now);
   }
 
@@ -245,8 +270,8 @@ export class SnakeScene extends Phaser.Scene {
   private placeApple(): boolean {
     const availableCells: Cell[] = [];
 
-    for (let y = 0; y < BOARD.rows; y += 1) {
-      for (let x = 0; x < BOARD.columns; x += 1) {
+    for (let y = 0; y < this.board.rows; y += 1) {
+      for (let x = 0; x < this.board.columns; x += 1) {
         const candidate = { x, y };
 
         if (!this.snake.some((part) => this.sameCell(part, candidate))) {
@@ -268,19 +293,19 @@ export class SnakeScene extends Phaser.Scene {
     this.graphics.clear();
     this.graphics.lineStyle(1, 0x172439, 1);
 
-    for (let column = 1; column < BOARD.columns; column += 1) {
-      const x = BOARD.x + column * BOARD.cellSize;
-      this.graphics.lineBetween(x, BOARD.y, x, BOARD.y + BOARD.rows * BOARD.cellSize);
+    for (let column = 1; column < this.board.columns; column += 1) {
+      const x = this.board.x + column * this.board.cellSize;
+      this.graphics.lineBetween(x, this.board.y, x, this.board.y + this.board.rows * this.board.cellSize);
     }
 
-    for (let row = 1; row < BOARD.rows; row += 1) {
-      const y = BOARD.y + row * BOARD.cellSize;
-      this.graphics.lineBetween(BOARD.x, y, BOARD.x + BOARD.columns * BOARD.cellSize, y);
+    for (let row = 1; row < this.board.rows; row += 1) {
+      const y = this.board.y + row * this.board.cellSize;
+      this.graphics.lineBetween(this.board.x, y, this.board.x + this.board.columns * this.board.cellSize, y);
     }
 
     if (this.apple) {
-      const appleX = BOARD.x + this.apple.x * BOARD.cellSize + BOARD.cellSize / 2;
-      const appleY = BOARD.y + this.apple.y * BOARD.cellSize + BOARD.cellSize / 2;
+      const appleX = this.board.x + this.apple.x * this.board.cellSize + this.board.cellSize / 2;
+      const appleY = this.board.y + this.apple.y * this.board.cellSize + this.board.cellSize / 2;
       this.graphics.fillStyle(0xef4444);
       this.graphics.fillCircle(appleX, appleY + 1, 8);
       this.graphics.lineStyle(3, 0x4ade80);
@@ -288,45 +313,56 @@ export class SnakeScene extends Phaser.Scene {
     }
 
     this.snake.forEach((part, index) => {
-      const x = BOARD.x + part.x * BOARD.cellSize + 3;
-      const y = BOARD.y + part.y * BOARD.cellSize + 3;
+      const x = this.board.x + part.x * this.board.cellSize + 3;
+      const y = this.board.y + part.y * this.board.cellSize + 3;
       this.graphics.fillStyle(index === 0 ? 0x86efac : 0x22c55e);
-      this.graphics.fillRoundedRect(x, y, BOARD.cellSize - 6, BOARD.cellSize - 6, 5);
+      this.graphics.fillRoundedRect(x, y, this.board.cellSize - 6, this.board.cellSize - 6, 5);
     });
   }
 
   private finishGame(message: string): void {
     this.finished = true;
     this.started = false;
+    this.drawBoard();
+    const portrait = this.isPortrait();
+    const width = this.scale.width;
+    const height = this.scale.height;
+    const panelWidth = portrait ? Math.min(360, width - 32) : 390;
+    const panelHeight = portrait ? 168 : 174;
+    const panelX = width / 2;
+    const panelY = portrait ? Math.round(height * 0.45) : 292;
+    const titleY = portrait ? panelY - 44 : 255;
+    const bodyY = portrait ? panelY - 2 : 294;
+    const footerY = portrait ? panelY + 40 : 335;
 
     this.add
-      .rectangle(480, 292, 390, 174, 0x060d18, 0.96)
+      .rectangle(panelX, panelY, panelWidth, panelHeight, 0x060d18, 0.96)
       .setStrokeStyle(2, 0x334155);
 
     this.add
-      .text(480, 255, '게임 오버', {
+      .text(panelX, titleY, '게임 오버', {
         color: '#f8fafc',
         fontFamily: 'Arial, sans-serif',
-        fontSize: '30px',
+        fontSize: portrait ? '26px' : '30px',
         fontStyle: 'bold',
         resolution: TEXT_RESOLUTION,
       })
       .setOrigin(0.5);
 
     this.add
-      .text(480, 294, `${message}  |  점수 ${this.score}`, {
+      .text(panelX, bodyY, `${message}  |  점수 ${this.score}`, {
         color: '#cbd5e1',
         fontFamily: 'Arial, sans-serif',
-        fontSize: '16px',
+        fontSize: portrait ? '14px' : '16px',
         resolution: TEXT_RESOLUTION,
       })
       .setOrigin(0.5);
 
     this.add
-      .text(480, 335, 'R: 다시 시작   Esc: 게임 목록', {
+      .text(panelX, footerY, 'R: 다시 시작   뒤로가기 버튼', {
         color: '#4ade80',
         fontFamily: 'Arial, sans-serif',
-        fontSize: '16px',
+        fontSize: portrait ? '14px' : '16px',
         fontStyle: 'bold',
         resolution: TEXT_RESOLUTION,
       })
@@ -343,11 +379,105 @@ export class SnakeScene extends Phaser.Scene {
   }
 
   private isOutsideBoard(cell: Cell): boolean {
-    return cell.x < 0 || cell.x >= BOARD.columns || cell.y < 0 || cell.y >= BOARD.rows;
+    return cell.x < 0 || cell.x >= this.board.columns || cell.y < 0 || cell.y >= this.board.rows;
   }
 
   private sameCell(first: Cell, second: Cell | null): boolean {
     return second !== null && first.x === second.x && first.y === second.y;
+  }
+
+  private isPortrait(): boolean {
+    return this.scale.height > this.scale.width;
+  }
+
+  private getBoardLayout(): BoardLayout {
+    if (!this.isPortrait()) {
+      return { ...LANDSCAPE_BOARD };
+    }
+
+    const width = this.scale.width;
+    const height = this.scale.height;
+    const cellSize = Math.max(
+      14,
+      Math.min(
+        15,
+        Math.floor(width / LANDSCAPE_BOARD.columns),
+        Math.floor((height - 220) / LANDSCAPE_BOARD.rows),
+      ),
+    );
+    const boardWidth = LANDSCAPE_BOARD.columns * cellSize;
+    return {
+      columns: LANDSCAPE_BOARD.columns,
+      rows: LANDSCAPE_BOARD.rows,
+      cellSize,
+      x: Math.round((width - boardWidth) / 2),
+      y: Math.round(Math.max(118, height * 0.14)),
+    };
+  }
+
+  private createTouchControls(width: number, height: number): void {
+    const centerX = width / 2;
+    const centerY = height - 200;
+    const buttonSize = 70;
+    const buttonGap = 14;
+    const createButton = (x: number, y: number, label: string, onDown: () => void): void => {
+      this.add
+        .rectangle(x, y, buttonSize, buttonSize, 0x111c30, 0.86)
+        .setStrokeStyle(2, 0x334155)
+        .setInteractive({ useHandCursor: true })
+        .on('pointerdown', onDown)
+        .on('pointerover', function onOver(this: Phaser.GameObjects.Rectangle) {
+          this.setFillStyle(0x1a2a45, 0.95).setStrokeStyle(2, 0x60a5fa);
+        })
+        .on('pointerout', function onOut(this: Phaser.GameObjects.Rectangle) {
+          this.setFillStyle(0x111c30, 0.86).setStrokeStyle(2, 0x334155);
+        });
+
+      this.add
+        .text(x, y, label, {
+          color: '#f8fafc',
+          fontFamily: 'Arial, sans-serif',
+          fontSize: '22px',
+          fontStyle: 'bold',
+          resolution: TEXT_RESOLUTION,
+        })
+        .setOrigin(0.5);
+    };
+
+    createButton(centerX, centerY - buttonSize - buttonGap, '↑', this.turnUp.bind(this));
+    createButton(centerX - buttonSize - buttonGap, centerY, '←', this.turnLeft.bind(this));
+    createButton(centerX + buttonSize + buttonGap, centerY, '→', this.turnRight.bind(this));
+    createButton(centerX, centerY + buttonSize + buttonGap, '↓', this.turnDown.bind(this));
+  }
+
+  private createBackButton(x: number, y: number): void {
+    const buttonWidth = 96;
+    const buttonHeight = 34;
+
+    const button = this.add
+      .rectangle(x, y, buttonWidth, buttonHeight, 0x111c30, 0.9)
+      .setStrokeStyle(2, 0x334155)
+      .setInteractive({ useHandCursor: true });
+
+    button.on('pointerdown', () => {
+      this.openMenu();
+    });
+    button.on('pointerover', () => {
+      button.setFillStyle(0x1a2a45, 0.96).setStrokeStyle(2, 0x60a5fa);
+    });
+    button.on('pointerout', () => {
+      button.setFillStyle(0x111c30, 0.9).setStrokeStyle(2, 0x334155);
+    });
+
+    this.add
+      .text(x, y, '뒤로가기', {
+        color: '#f8fafc',
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '14px',
+        fontStyle: 'bold',
+        resolution: TEXT_RESOLUTION,
+      })
+      .setOrigin(0.5);
   }
 
   private restart(): void {
