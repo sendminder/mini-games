@@ -70,15 +70,15 @@ export class DodgeScene extends Phaser.Scene {
     const width = this.scale.width;
     const height = this.scale.height;
     const titleX = portrait ? 24 : 150;
-    const titleY = portrait ? 26 : 34;
+    const titleY = portrait ? 18 : 34;
     const highScoreX = portrait ? 16 : 810;
     const scoreX = portrait ? 16 : 810;
     const timeX = portrait ? width / 2 : 480;
-    const timeY = portrait ? 60 : 46;
-    const scoreY = portrait ? 44 : 53;
-    const footerY = portrait ? height - 34 : 509;
+    const timeY = portrait ? 56 : 46;
+    const scoreY = portrait ? 42 : 53;
+    const footerY = portrait ? height - 24 : 509;
     const backButtonX = width - 56;
-    const backButtonY = portrait ? 76 : 48;
+    const backButtonY = portrait ? 18 : 48;
     const hintText = portrait
       ? '좌/우 버튼 또는 키보드  |  양 끝은 연결됨'
       : '← → 길게 눌러 가속  |  양 끝은 연결됨';
@@ -86,7 +86,7 @@ export class DodgeScene extends Phaser.Scene {
     this.add.text(titleX, titleY, '똥피하기', {
       color: '#f8fafc',
       fontFamily: 'Arial, sans-serif',
-      fontSize: portrait ? '22px' : '27px',
+      fontSize: portrait ? '19px' : '27px',
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });
@@ -94,7 +94,7 @@ export class DodgeScene extends Phaser.Scene {
     this.timeText = this.add.text(timeX, timeY, '생존  0.0초', {
       color: '#94a3b8',
       fontFamily: 'Arial, sans-serif',
-      fontSize: portrait ? '13px' : '16px',
+      fontSize: portrait ? '11px' : '16px',
       resolution: TEXT_RESOLUTION,
     });
     this.timeText.setOrigin(0.5);
@@ -102,7 +102,7 @@ export class DodgeScene extends Phaser.Scene {
     this.highScoreText = this.add.text(highScoreX, portrait ? 24 : 30, `최고  ${this.highScore}`, {
       color: '#facc15',
       fontFamily: 'Arial, sans-serif',
-      fontSize: portrait ? '12px' : '15px',
+      fontSize: portrait ? '11px' : '15px',
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });

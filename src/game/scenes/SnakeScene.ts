@@ -72,19 +72,19 @@ export class SnakeScene extends Phaser.Scene {
     const width = this.scale.width;
     const height = this.scale.height;
     const titleX = portrait ? 24 : 168;
-    const titleY = portrait ? 26 : 33;
+    const titleY = portrait ? 18 : 33;
     const highScoreX = portrait ? 16 : 792;
     const scoreX = portrait ? 16 : 792;
     const scoreY = portrait ? 44 : 53;
-    const footerY = portrait ? height - 32 : 514;
+    const footerY = portrait ? height - 24 : 514;
     const backButtonX = width - 56;
-    const backButtonY = portrait ? 76 : 48;
+    const backButtonY = portrait ? 18 : 48;
 
     this.add
       .text(titleX, titleY, '사과 먹는 애벌레', {
         color: '#f8fafc',
         fontFamily: 'Arial, sans-serif',
-        fontSize: portrait ? '22px' : '27px',
+        fontSize: portrait ? '19px' : '27px',
         fontStyle: 'bold',
         resolution: TEXT_RESOLUTION,
       });
@@ -122,7 +122,7 @@ export class SnakeScene extends Phaser.Scene {
       .text(portrait ? width / 2 : 480, footerY, '화살표 키로 시작', {
         color: '#94a3b8',
         fontFamily: 'Arial, sans-serif',
-        fontSize: portrait ? '13px' : '16px',
+        fontSize: portrait ? '11px' : '16px',
         resolution: TEXT_RESOLUTION,
       })
       .setOrigin(0.5);

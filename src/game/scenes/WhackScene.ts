@@ -72,24 +72,24 @@ export class WhackScene extends Phaser.Scene {
     const width = this.scale.width;
     const height = this.scale.height;
     const titleX = portrait ? 24 : 156;
-    const titleY = portrait ? 26 : 34;
+    const titleY = portrait ? 18 : 34;
     const highScoreX = portrait ? 16 : 810;
     const scoreX = portrait ? 16 : 810;
     const timeX = portrait ? width / 2 : 480;
-    const timeY = portrait ? 60 : 46;
-    const scoreY = portrait ? 44 : 53;
-    const lifeY = portrait ? 86 : 515;
-    const footerY = portrait ? height - 32 : 515;
+    const timeY = portrait ? 56 : 46;
+    const scoreY = portrait ? 42 : 53;
+    const lifeY = portrait ? 78 : 515;
+    const footerY = portrait ? height - 24 : 515;
     const footerText = portrait
       ? '두더지 탭 / 클릭  |  폭탄은 피하기'
       : '두더지 탭 / 클릭  |  폭탄은 피하기';
     const backButtonX = width - 56;
-    const backButtonY = portrait ? 76 : 48;
+    const backButtonY = portrait ? 18 : 48;
 
     this.add.text(titleX, titleY, '두더지 잡기', {
       color: '#f8fafc',
       fontFamily: 'Arial, sans-serif',
-      fontSize: portrait ? '22px' : '27px',
+      fontSize: portrait ? '19px' : '27px',
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });
@@ -97,7 +97,7 @@ export class WhackScene extends Phaser.Scene {
     this.timeText = this.add.text(timeX, timeY, '경과  0.0초', {
       color: '#94a3b8',
       fontFamily: 'Arial, sans-serif',
-      fontSize: portrait ? '13px' : '16px',
+      fontSize: portrait ? '11px' : '16px',
       resolution: TEXT_RESOLUTION,
     });
     this.timeText.setOrigin(0.5);
@@ -105,7 +105,7 @@ export class WhackScene extends Phaser.Scene {
     this.highScoreText = this.add.text(highScoreX, portrait ? 24 : 30, `최고  ${this.highScore}`, {
       color: '#facc15',
       fontFamily: 'Arial, sans-serif',
-      fontSize: portrait ? '12px' : '15px',
+      fontSize: portrait ? '11px' : '15px',
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });
@@ -114,7 +114,7 @@ export class WhackScene extends Phaser.Scene {
     this.scoreText = this.add.text(scoreX, scoreY, '점수  0', {
       color: '#f8fafc',
       fontFamily: 'Arial, sans-serif',
-      fontSize: portrait ? '15px' : '18px',
+      fontSize: portrait ? '13px' : '18px',
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });
@@ -123,7 +123,7 @@ export class WhackScene extends Phaser.Scene {
     this.lifeText = this.add.text(titleX, lifeY, '목숨  3', {
       color: '#f59e0b',
       fontFamily: 'Arial, sans-serif',
-      fontSize: portrait ? '13px' : '16px',
+      fontSize: portrait ? '11px' : '16px',
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });

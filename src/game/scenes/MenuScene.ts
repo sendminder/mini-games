@@ -59,10 +59,10 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.createActionButton(
-      layout.portrait ? width - 66 : width - 70,
-      layout.portrait ? 42 : 44,
-      layout.portrait ? 112 : 118,
-      layout.portrait ? 32 : 34,
+      layout.portrait ? width / 2 : width - 70,
+      layout.portrait ? 120 : 44,
+      layout.portrait ? 176 : 118,
+      layout.portrait ? 36 : 34,
       '순위보기',
       () => {
         this.scene.start('RankScene');
@@ -232,9 +232,9 @@ export class MenuScene extends Phaser.Scene {
 
     const cardX = 24;
     const cardWidth = width - 48;
-    const cardHeight = Math.min(176, Math.floor((height - 212) / 3));
+    const cardHeight = Math.min(168, Math.floor((height - 240) / 3));
     const gap = 16;
-    const firstCardY = 166;
+    const firstCardY = 174;
 
     return {
       portrait: true,

@@ -42,18 +42,18 @@ export class RankScene extends Phaser.Scene {
     const width = this.scale.width;
     const portrait = this.isPortrait();
     const titleX = width / 2;
-    const titleY = portrait ? 46 : 50;
-    const subtitleY = portrait ? 80 : 90;
+    const titleY = portrait ? 38 : 50;
+    const subtitleY = portrait ? 68 : 90;
     const backButtonX = portrait ? 72 : 84;
-    const backButtonY = portrait ? 48 : 48;
-    const tabY = portrait ? 126 : 138;
-    const startY = portrait ? 176 : 196;
+    const backButtonY = portrait ? 24 : 48;
+    const tabY = portrait ? 112 : 138;
+    const startY = portrait ? 170 : 196;
 
     this.add
       .text(titleX, titleY, '글로벌 순위', {
         color: '#f8fafc',
         fontFamily: 'Arial, sans-serif',
-        fontSize: portrait ? '30px' : '38px',
+        fontSize: portrait ? '26px' : '38px',
         fontStyle: 'bold',
         resolution: TEXT_RESOLUTION,
       })
@@ -63,34 +63,34 @@ export class RankScene extends Phaser.Scene {
       .text(titleX, subtitleY, '닉네임이 같아도 player key로 개별 기록을 저장합니다', {
         color: '#94a3b8',
         fontFamily: 'Arial, sans-serif',
-        fontSize: portrait ? '11px' : '14px',
+        fontSize: portrait ? '10px' : '14px',
         resolution: TEXT_RESOLUTION,
       })
       .setOrigin(0.5);
 
     this.summaryText = this.add
-      .text(titleX, portrait ? 102 : 112, '', {
+      .text(titleX, portrait ? 92 : 112, '', {
         color: '#cbd5e1',
         fontFamily: 'Arial, sans-serif',
-        fontSize: portrait ? '11px' : '15px',
+        fontSize: portrait ? '10px' : '15px',
         resolution: TEXT_RESOLUTION,
       })
       .setOrigin(0.5);
 
     this.identityText = this.add
-      .text(titleX, portrait ? 120 : 132, '', {
+      .text(titleX, portrait ? 108 : 132, '', {
         color: '#94a3b8',
         fontFamily: 'Arial, sans-serif',
-        fontSize: portrait ? '11px' : '14px',
+        fontSize: portrait ? '10px' : '14px',
         resolution: TEXT_RESOLUTION,
       })
       .setOrigin(0.5);
 
     this.statusText = this.add
-      .text(titleX, portrait ? startY + 38 : startY + 52, '불러오는 중...', {
+      .text(titleX, portrait ? startY + 34 : startY + 52, '불러오는 중...', {
         color: '#94a3b8',
         fontFamily: 'Arial, sans-serif',
-        fontSize: portrait ? '11px' : '15px',
+        fontSize: portrait ? '10px' : '15px',
         resolution: TEXT_RESOLUTION,
       })
       .setOrigin(0.5);
@@ -104,8 +104,8 @@ export class RankScene extends Phaser.Scene {
   private createTabs(y: number): void {
     const width = this.scale.width;
     const portrait = this.isPortrait();
-    const tabWidth = portrait ? Math.min(100, Math.floor((width - 40) / 3)) : 190;
-    const tabHeight = portrait ? 40 : 46;
+    const tabWidth = portrait ? Math.min(94, Math.floor((width - 32) / 3)) : 190;
+    const tabHeight = portrait ? 36 : 46;
     const totalWidth = tabWidth * 3 + 8 * 2;
     const startX = width / 2 - totalWidth / 2 + tabWidth / 2;
 
@@ -170,24 +170,24 @@ export class RankScene extends Phaser.Scene {
   private renderRows(entries: Awaited<ReturnType<typeof fetchLeaderboard>>): void {
     const width = this.scale.width;
     const portrait = this.isPortrait();
-    const rowStartY = portrait ? 190 : 208;
-    const rowGap = portrait ? 38 : 46;
-    const rankX = portrait ? 46 : 90;
-    const nameX = portrait ? 110 : 220;
-    const scoreX = width - (portrait ? 18 : 90);
+    const rowStartY = portrait ? 208 : 208;
+    const rowGap = portrait ? 34 : 46;
+    const rankX = portrait ? 40 : 90;
+    const nameX = portrait ? 104 : 220;
+    const scoreX = width - (portrait ? 16 : 90);
     const playerKey = getStoredPlayerKey();
 
     entries.forEach((entry, index) => {
       const y = rowStartY + index * rowGap;
       const highlight = playerKey !== null && entry.player_key === playerKey;
       const row = this.add
-        .rectangle(width / 2, y, width - (portrait ? 22 : 120), rowGap - 4, highlight ? 0x1d4ed8 : 0x111c30, highlight ? 0.28 : 0.88)
+        .rectangle(width / 2, y, width - (portrait ? 18 : 120), rowGap - 4, highlight ? 0x1d4ed8 : 0x111c30, highlight ? 0.28 : 0.88)
         .setStrokeStyle(1, highlight ? 0x93c5fd : 0x243655);
       const rankText = this.add
         .text(rankX, y, `${index + 1}`, {
           color: highlight ? '#93c5fd' : '#94a3b8',
           fontFamily: 'Arial, sans-serif',
-          fontSize: portrait ? '12px' : '16px',
+          fontSize: portrait ? '11px' : '16px',
           fontStyle: 'bold',
           resolution: TEXT_RESOLUTION,
         })
@@ -196,7 +196,7 @@ export class RankScene extends Phaser.Scene {
         .text(nameX, y, entry.nickname, {
           color: '#f8fafc',
           fontFamily: 'Arial, sans-serif',
-          fontSize: portrait ? '12px' : '17px',
+          fontSize: portrait ? '11px' : '17px',
           fontStyle: highlight ? 'bold' : 'normal',
           resolution: TEXT_RESOLUTION,
         })
@@ -205,7 +205,7 @@ export class RankScene extends Phaser.Scene {
         .text(scoreX, y, String(entry.score), {
           color: highlight ? '#facc15' : '#f8fafc',
           fontFamily: 'Arial, sans-serif',
-          fontSize: portrait ? '12px' : '18px',
+          fontSize: portrait ? '11px' : '18px',
           fontStyle: 'bold',
           resolution: TEXT_RESOLUTION,
         })
@@ -243,8 +243,8 @@ export class RankScene extends Phaser.Scene {
   }
 
   private createBackButton(x: number, y: number): void {
-    const buttonWidth = 110;
-    const buttonHeight = 36;
+    const buttonWidth = 100;
+    const buttonHeight = 32;
 
     const button = this.add
       .rectangle(x, y, buttonWidth, buttonHeight, 0x111c30, 0.94)
@@ -265,7 +265,7 @@ export class RankScene extends Phaser.Scene {
       .text(x, y, '뒤로가기', {
         color: '#f8fafc',
         fontFamily: 'Arial, sans-serif',
-        fontSize: '14px',
+        fontSize: '13px',
         fontStyle: 'bold',
         resolution: TEXT_RESOLUTION,
       })
