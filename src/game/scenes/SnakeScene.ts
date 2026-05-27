@@ -30,7 +30,7 @@ const PORTRAIT_BOARD = {
   columns: 24,
   rows: 20,
   topRatio: 0.12,
-  footerGap: 168,
+  footerGap: 184,
 } as const;
 
 const INITIAL_MOVE_DELAY = 125;
@@ -353,11 +353,12 @@ export class SnakeScene extends Phaser.Scene {
     const width = this.scale.width;
     const height = this.scale.height;
     const usableHeight = height - PORTRAIT_BOARD.footerGap;
+    const maxCellByWidth = Math.floor((width - 24) / PORTRAIT_BOARD.columns);
     const cellSize = Math.max(
       14,
       Math.min(
         18,
-        Math.floor(width / PORTRAIT_BOARD.columns),
+        maxCellByWidth,
         Math.floor(usableHeight / PORTRAIT_BOARD.rows),
       ),
     );
@@ -373,14 +374,33 @@ export class SnakeScene extends Phaser.Scene {
 
   private createTouchControls(width: number, height: number): void {
     const centerX = width / 2;
-    const centerY = height - 176;
-    const buttonSize = 70;
-    const buttonGap = 14;
-    const createButton = (x: number, y: number, label: string, onDown: () => void): void => {
+    const boardBottom = this.board.y + this.board.rows * this.board.cellSize;
+    const sidePadding = 14;
+    const buttonGap = 10;
+    const buttonHeight = Phaser.Math.Clamp(Math.floor((height - boardBottom - 44) / 2), 48, 58);
+    const buttonWidth = Math.min(86, Math.floor((width - sidePadding * 2 - buttonGap * 2) / 3));
+    const topRowY = Math.min(
+      height - buttonHeight * 1.5 - 30,
+      Math.max(boardBottom + buttonHeight / 2 + 16, Math.round(height * 0.72)),
+    );
+    const bottomRowY = Math.min(
+      height - buttonHeight / 2 - 20,
+      topRowY + buttonHeight + 12,
+    );
+    const verticalButtonWidth = Math.min(106, Math.floor((width - sidePadding * 2 - buttonGap) / 2));
+
+    const createButton = (
+      x: number,
+      y: number,
+      widthValue: number,
+      label: string,
+      onDown: () => void,
+    ): void => {
       this.add
-        .rectangle(x, y, buttonSize, buttonSize, 0x111c30, 0.86)
+        .rectangle(x, y, widthValue, buttonHeight, 0x111c30, 0.9)
         .setStrokeStyle(2, 0x334155)
         .setInteractive({ useHandCursor: true })
+        .setDepth(20)
         .on('pointerdown', onDown)
         .on('pointerover', function onOver(this: Phaser.GameObjects.Rectangle) {
           this.setFillStyle(0x1a2a45, 0.95).setStrokeStyle(2, 0x60a5fa);
@@ -393,17 +413,18 @@ export class SnakeScene extends Phaser.Scene {
         .text(x, y, label, {
           color: '#f8fafc',
           fontFamily: 'Arial, sans-serif',
-          fontSize: '22px',
+          fontSize: '24px',
           fontStyle: 'bold',
           resolution: TEXT_RESOLUTION,
         })
-        .setOrigin(0.5);
+        .setOrigin(0.5)
+        .setDepth(21);
     };
 
-    createButton(centerX, centerY - buttonSize - buttonGap, '↑', this.turnUp.bind(this));
-    createButton(centerX - buttonSize - buttonGap, centerY, '←', this.turnLeft.bind(this));
-    createButton(centerX + buttonSize + buttonGap, centerY, '→', this.turnRight.bind(this));
-    createButton(centerX, centerY + buttonSize + buttonGap, '↓', this.turnDown.bind(this));
+    createButton(centerX - buttonWidth - buttonGap, topRowY, buttonWidth, '←', this.turnLeft.bind(this));
+    createButton(centerX, topRowY, buttonWidth, '↑', this.turnUp.bind(this));
+    createButton(centerX + buttonWidth + buttonGap, topRowY, buttonWidth, '→', this.turnRight.bind(this));
+    createButton(centerX, bottomRowY, verticalButtonWidth, '↓', this.turnDown.bind(this));
   }
 
   private restart(): void {

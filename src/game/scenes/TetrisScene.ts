@@ -551,20 +551,30 @@ export class TetrisScene extends Phaser.Scene {
     const height = this.scale.height;
     const boardBottom = this.boardLayout.y + BOARD_ROWS * this.boardLayout.cellSize;
     const centerX = width / 2;
-    const buttonSize = 60;
-    const gap = 14;
-    const downY = Math.min(height - 100, Math.max(boardBottom + 64, Math.round(height * 0.76)));
-    const rowY = Math.max(boardBottom + 20, downY - buttonSize - 14);
+    const sidePadding = 14;
+    const gap = 10;
+    const buttonHeight = Phaser.Math.Clamp(Math.floor((height - boardBottom - 44) / 2), 44, 56);
+    const buttonWidth = Math.min(76, Math.floor((width - sidePadding * 2 - gap * 2) / 3));
+    const actionWidth = Math.min(116, Math.floor((width - sidePadding * 2 - gap) / 2));
+    const firstRowY = Math.min(
+      height - buttonHeight * 1.5 - 28,
+      Math.max(boardBottom + buttonHeight / 2 + 16, Math.round(height * 0.73)),
+    );
+    const secondRowY = Math.min(
+      height - buttonHeight / 2 - 18,
+      firstRowY + buttonHeight + 12,
+    );
 
     const createButton = (
       x: number,
       y: number,
+      widthValue: number,
       label: string,
       onDown: () => void,
       onUp?: () => void,
     ): void => {
       this.add
-        .rectangle(x, y, buttonSize, buttonSize, 0x111c30, 0.88)
+        .rectangle(x, y, widthValue, buttonHeight, 0x111c30, 0.9)
         .setStrokeStyle(2, 0x334155)
         .setInteractive({ useHandCursor: true })
         .setDepth(20)
@@ -583,19 +593,19 @@ export class TetrisScene extends Phaser.Scene {
       this.add.text(x, y, label, {
         color: '#f8fafc',
         fontFamily: 'Arial, sans-serif',
-        fontSize: '18px',
+        fontSize: `${label.length > 1 ? 15 : 22}px`,
         fontStyle: 'bold',
         resolution: TEXT_RESOLUTION,
       }).setOrigin(0.5).setDepth(21);
     };
 
-    createButton(centerX - buttonSize - gap, rowY, '←', () => this.moveLeft());
-    createButton(centerX, rowY, '⟳', () => this.rotatePiece());
-    createButton(centerX + buttonSize + gap, rowY, '→', () => this.moveRight());
-    createButton(centerX + (buttonSize + gap) * 2, rowY, 'DROP', () => this.hardDrop());
+    createButton(centerX - buttonWidth - gap, firstRowY, buttonWidth, '←', () => this.moveLeft());
+    createButton(centerX, firstRowY, buttonWidth, '⟳', () => this.rotatePiece());
+    createButton(centerX + buttonWidth + gap, firstRowY, buttonWidth, '→', () => this.moveRight());
     createButton(
-      centerX,
-      downY,
+      centerX - actionWidth / 2 - gap / 2,
+      secondRowY,
+      actionWidth,
       '↓',
       () => {
         this.softDropHeld = true;
@@ -604,6 +614,7 @@ export class TetrisScene extends Phaser.Scene {
         this.softDropHeld = false;
       },
     );
+    createButton(centerX + actionWidth / 2 + gap / 2, secondRowY, actionWidth, 'DROP', () => this.hardDrop());
   }
 
   private getBoardLayout(): BoardLayout {
@@ -612,11 +623,13 @@ export class TetrisScene extends Phaser.Scene {
     const portrait = height > width;
     const top = portrait ? Math.max(112, Math.round(height * 0.13)) : 108;
     const availableWidth = portrait ? width - 48 : Math.min(380, width - 420);
-    const availableHeight = portrait ? height - 240 : height - 220;
+    const availableHeight = portrait ? height - 280 : height - 220;
+    const minCellSize = portrait ? 14 : 18;
+    const maxCellSize = portrait ? 22 : 24;
     const cellSize = Math.max(
-      18,
+      minCellSize,
       Math.min(
-        24,
+        maxCellSize,
         Math.floor(availableWidth / BOARD_COLUMNS),
         Math.floor(availableHeight / BOARD_ROWS),
       ),

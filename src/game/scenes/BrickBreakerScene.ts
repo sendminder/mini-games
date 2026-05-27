@@ -174,11 +174,6 @@ export class BrickBreakerScene extends Phaser.Scene {
       this.createTouchControls(width, height);
     }
 
-    this.input.on('pointerdown', this.launchBall, this);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      this.input.off('pointerdown', this.launchBall, this);
-    });
-
     this.resetBall(true);
     this.updateStatusDisplay();
     this.drawScene();
