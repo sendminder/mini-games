@@ -7,12 +7,13 @@ import {
   getTetrisHighScore,
   getWhackHighScore,
 } from '../storage/highScore';
+import { fetchMyBestRecord, type GameKey } from '../storage/leaderboard';
 
 type GameCardConfig = {
   y: number;
+  gameKey: GameKey;
   label: string;
   title: string;
-  description: string;
   highScore: number;
   accent: number;
   accentColor: string;
@@ -89,9 +90,9 @@ export class MenuScene extends Phaser.Scene {
 
     this.createGameCard({
       y: layout.cardYs[0],
+      gameKey: 'snake',
       label: '1  SNAKE',
       title: '사과 먹는 애벌레',
-      description: '사과를 먹으며 길어지는 뱀을 조종하세요.',
       highScore: snakeHighScore,
       accent: 0x4ade80,
       accentColor: '#4ade80',
@@ -99,9 +100,9 @@ export class MenuScene extends Phaser.Scene {
     }, layout);
     this.createGameCard({
       y: layout.cardYs[1],
+      gameKey: 'dodge',
       label: '2  DODGE',
       title: '똥피하기',
-      description: '양 끝이 연결된 바닥에서 떨어지는 똥을 피하세요.',
       highScore: dodgeHighScore,
       accent: 0xf59e0b,
       accentColor: '#f59e0b',
@@ -109,9 +110,9 @@ export class MenuScene extends Phaser.Scene {
     }, layout);
     this.createGameCard({
       y: layout.cardYs[2],
+      gameKey: 'whack',
       label: '3  WHACK',
       title: '두더지 잡기',
-      description: '두더지를 터치하고 폭탄 두더지는 피하세요.',
       highScore: whackHighScore,
       accent: 0x60a5fa,
       accentColor: '#60a5fa',
@@ -121,9 +122,9 @@ export class MenuScene extends Phaser.Scene {
     }, layout);
     this.createGameCard({
       y: layout.cardYs[3],
+      gameKey: 'tetris',
       label: '4  TETRIS',
       title: '테트리스 라이트',
-      description: '좌우 이동과 회전으로 줄을 완성하세요.',
       highScore: tetrisHighScore,
       accent: 0xf87171,
       accentColor: '#f87171',
@@ -131,12 +132,12 @@ export class MenuScene extends Phaser.Scene {
     }, layout);
     this.createGameCard({
       y: layout.cardYs[4],
+      gameKey: 'brick',
       label: '5  BRICK',
       title: '벽돌깨기',
-      description: '패들을 좌우로 움직여 공을 튕기고 벽돌을 깨세요.',
       highScore: brickHighScore,
-      accent: 0xf5f1e8,
-      accentColor: '#f5f1e8',
+      accent: 0xfacc15,
+      accentColor: '#facc15',
       start: () => {
         this.scene.start('BrickBreakerScene');
       },
@@ -177,34 +178,45 @@ export class MenuScene extends Phaser.Scene {
     this.add.text(leftX, config.y - layout.cardHeight * 0.32, config.label, {
       color: config.accentColor,
       fontFamily: 'Arial, sans-serif',
-      fontSize: layout.portrait ? '10px' : '14px',
+      fontSize: layout.portrait ? '11px' : '15px',
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });
-    this.add.text(leftX, config.y - layout.cardHeight * 0.08, config.title, {
+    this.add.text(leftX, config.y - layout.cardHeight * 0.02, config.title, {
       color: '#f8fafc',
       fontFamily: 'Arial, sans-serif',
-      fontSize: layout.portrait ? '17px' : '25px',
+      fontSize: layout.portrait ? '21px' : '28px',
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
-    });
-    this.add.text(leftX, config.y + layout.cardHeight * 0.15, config.description, {
-      color: '#cbd5e1',
-      fontFamily: 'Arial, sans-serif',
-      fontSize: layout.portrait ? '12px' : '15px',
-      lineSpacing: layout.portrait ? 3 : 1,
-      wordWrap: { width: layout.cardWidth - (layout.portrait ? 150 : 170) },
-      resolution: TEXT_RESOLUTION,
-    });
-    this.add
+    }).setOrigin(0, 0.5);
+
+    const highScoreText = this.add
       .text(rightX, config.y - layout.cardHeight * 0.32, `최고 점수  ${config.highScore}`, {
         color: '#facc15',
         fontFamily: 'Arial, sans-serif',
-        fontSize: layout.portrait ? '10px' : '14px',
+        fontSize: layout.portrait ? '14px' : '18px',
         fontStyle: 'bold',
         resolution: TEXT_RESOLUTION,
       })
       .setOrigin(1, 0);
+    const rankText = this.add
+      .text(rightX, config.y - layout.cardHeight * 0.04, '나의 최고순위  -', {
+        color: '#bae6fd',
+        fontFamily: 'Arial, sans-serif',
+        fontSize: layout.portrait ? '14px' : '18px',
+        fontStyle: 'bold',
+        resolution: TEXT_RESOLUTION,
+      })
+      .setOrigin(1, 0);
+
+    void fetchMyBestRecord(config.gameKey).then((record) => {
+      if (!this.scene.isActive()) {
+        return;
+      }
+
+      highScoreText.setText(`최고 점수  ${config.highScore}`);
+      rankText.setText(record === null ? '나의 최고순위  -' : `나의 최고순위  ${record.rank}위`);
+    });
 
     card.on('pointerover', () => {
       card.setFillStyle(0x182942).setStrokeStyle(2, config.accent);

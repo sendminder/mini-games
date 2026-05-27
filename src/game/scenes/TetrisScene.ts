@@ -32,7 +32,7 @@ const BOARD_ROWS = 20;
 const INITIAL_DROP_MS = 820;
 const MIN_DROP_MS = 180;
 const DROP_STEP_MS = 55;
-const SOFT_DROP_MS = 65;
+const SOFT_DROP_MS = 130;
 const TOUCH_MOVE_REPEAT_MS = 95;
 const PIECE_START_X = 3;
 const PIECE_START_Y = 0;
@@ -247,6 +247,7 @@ export class TetrisScene extends Phaser.Scene {
 
   private handleSoftDropStart(): void {
     this.softDropHeld = true;
+    this.dropAccumulator = 0;
   }
 
   private handleSoftDropEnd(): void {
