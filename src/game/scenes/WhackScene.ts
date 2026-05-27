@@ -73,8 +73,8 @@ export class WhackScene extends Phaser.Scene {
     const height = this.scale.height;
     const titleX = portrait ? 24 : 156;
     const titleY = portrait ? 26 : 34;
-    const highScoreX = portrait ? width - 24 : 810;
-    const scoreX = portrait ? width - 24 : 810;
+    const highScoreX = portrait ? 16 : 810;
+    const scoreX = portrait ? 16 : 810;
     const timeX = portrait ? width / 2 : 480;
     const timeY = portrait ? 60 : 46;
     const scoreY = portrait ? 44 : 53;
@@ -109,7 +109,7 @@ export class WhackScene extends Phaser.Scene {
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });
-    this.highScoreText.setOrigin(1, 0);
+    this.highScoreText.setOrigin(0, 0);
 
     this.scoreText = this.add.text(scoreX, scoreY, '점수  0', {
       color: '#f8fafc',
@@ -118,7 +118,7 @@ export class WhackScene extends Phaser.Scene {
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });
-    this.scoreText.setOrigin(1, 0);
+    this.scoreText.setOrigin(0, 0);
 
     this.lifeText = this.add.text(titleX, lifeY, '목숨  3', {
       color: '#f59e0b',

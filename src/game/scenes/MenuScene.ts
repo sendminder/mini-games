@@ -59,17 +59,6 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.createActionButton(
-      layout.titleX,
-      layout.portrait ? 124 : 126,
-      layout.portrait ? 160 : 170,
-      layout.portrait ? 36 : 40,
-      '순위보기',
-      () => {
-        this.scene.start('RankScene');
-      },
-    );
-
-    this.createActionButton(
       layout.portrait ? width - 66 : width - 70,
       layout.portrait ? 42 : 44,
       layout.portrait ? 112 : 118,
@@ -153,29 +142,29 @@ export class MenuScene extends Phaser.Scene {
     this.add.text(leftX, config.y - layout.cardHeight * 0.32, config.label, {
       color: config.accentColor,
       fontFamily: 'Arial, sans-serif',
-      fontSize: layout.portrait ? '12px' : '14px',
+      fontSize: layout.portrait ? '11px' : '14px',
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });
     this.add.text(leftX, config.y - layout.cardHeight * 0.08, config.title, {
       color: '#f8fafc',
       fontFamily: 'Arial, sans-serif',
-      fontSize: layout.portrait ? '21px' : '25px',
+      fontSize: layout.portrait ? '18px' : '25px',
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });
     this.add.text(leftX, config.y + layout.cardHeight * 0.15, config.description, {
       color: '#9aa9c2',
       fontFamily: 'Arial, sans-serif',
-      fontSize: layout.portrait ? '12px' : '14px',
-      wordWrap: { width: layout.cardWidth - 170 },
+      fontSize: layout.portrait ? '11px' : '14px',
+      wordWrap: { width: layout.cardWidth - (layout.portrait ? 142 : 170) },
       resolution: TEXT_RESOLUTION,
     });
     this.add
       .text(rightX, config.y - layout.cardHeight * 0.32, `최고 점수  ${config.highScore}`, {
         color: '#facc15',
         fontFamily: 'Arial, sans-serif',
-        fontSize: layout.portrait ? '12px' : '14px',
+        fontSize: layout.portrait ? '11px' : '14px',
         fontStyle: 'bold',
         resolution: TEXT_RESOLUTION,
       })
@@ -243,9 +232,9 @@ export class MenuScene extends Phaser.Scene {
 
     const cardX = 24;
     const cardWidth = width - 48;
-    const cardHeight = Math.min(180, Math.floor((height - 220) / 3));
-    const gap = 18;
-    const firstCardY = 170;
+    const cardHeight = Math.min(176, Math.floor((height - 212) / 3));
+    const gap = 16;
+    const firstCardY = 166;
 
     return {
       portrait: true,
