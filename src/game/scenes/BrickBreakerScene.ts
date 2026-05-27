@@ -59,7 +59,7 @@ const BASE_BALL_SPEED = 360;
 const MAX_BALL_SPEED = 620;
 const PADDLE_SPEED_PORTRAIT = 430;
 const PADDLE_SPEED_LANDSCAPE = 470;
-const SUPER_BALL_DURATION_MS = 15000;
+const SUPER_BALL_DURATION_MS = 7000;
 const BULLET_COUNT = 10;
 const PADDLE_MIN_WIDTH = 98;
 const PADDLE_MAX_WIDTH = 206;
@@ -88,7 +88,6 @@ export class BrickBreakerScene extends Phaser.Scene {
   private level = 1;
   private finished = false;
   private shootAmmo = 0;
-  private pendingMultiBall = false;
   private superBallUntil = 0;
   private shootFlashUntil = 0;
 
@@ -212,10 +211,14 @@ export class BrickBreakerScene extends Phaser.Scene {
 
   private updateBalls(step: number): void {
     const nextBalls: BallState[] = [];
+    const attachedBalls = this.balls.filter((ball) => ball.attached);
+    const attachedTotal = attachedBalls.length;
+    let attachedIndex = 0;
 
     for (const ball of this.balls) {
       if (ball.attached) {
-        this.syncBallToPaddle(ball);
+        this.syncBallToPaddle(ball, attachedIndex, attachedTotal);
+        attachedIndex += 1;
         nextBalls.push(ball);
         continue;
       }
@@ -234,10 +237,6 @@ export class BrickBreakerScene extends Phaser.Scene {
       return;
     }
 
-    if (this.pendingMultiBall && this.balls.length === 1 && !this.balls[0].attached) {
-      this.spawnCloneBall(this.balls[0]);
-      this.pendingMultiBall = false;
-    }
   }
 
   private updateBullets(step: number): void {
@@ -249,7 +248,7 @@ export class BrickBreakerScene extends Phaser.Scene {
       }
 
       bullet.y += bullet.vy * step;
-      let hit = false;
+      let hitBrick = false;
 
       for (const brick of this.bricks) {
         if (!brick.active || !this.isBulletOverlappingBrick(bullet, brick)) {
@@ -261,16 +260,27 @@ export class BrickBreakerScene extends Phaser.Scene {
         this.updateHighScore();
         this.scoreText.setText(`점수  ${this.score}`);
         this.spawnItem(brick);
-        hit = true;
+        hitBrick = true;
         break;
       }
 
-      if (!hit && bullet.y + bullet.radius < this.field.top) {
+      if (hitBrick || bullet.y + bullet.radius < this.field.top) {
+        bullet.active = false;
+      }
+
+      if (bullet.active) {
         nextBullets.push(bullet);
       }
     }
 
     this.bullets = nextBullets;
+
+    if (this.bricks.every((brick) => !brick.active)) {
+      this.level += 1;
+      this.createBricks();
+      this.resetBall(true);
+      this.updateStatusDisplay();
+    }
   }
 
   private resetState(): void {
@@ -283,7 +293,6 @@ export class BrickBreakerScene extends Phaser.Scene {
     this.bullets = [];
     this.balls = [];
     this.shootAmmo = 0;
-    this.pendingMultiBall = false;
     this.superBallUntil = 0;
     this.shootFlashUntil = 0;
     this.basePaddleWidth = this.isPortrait() ? 118 : 146;
@@ -341,8 +350,11 @@ export class BrickBreakerScene extends Phaser.Scene {
     this.paddleX = Phaser.Math.Clamp(this.paddleX, this.field.left + halfWidth, this.field.right - halfWidth);
   }
 
-  private syncBallToPaddle(ball: BallState): void {
-    ball.x = this.paddleX;
+  private syncBallToPaddle(ball: BallState, index = 0, total = 1): void {
+    const spread = total > 1 ? (ball.radius * 2.2) : 0;
+    const offset = (index - (total - 1) / 2) * spread;
+
+    ball.x = this.paddleX + offset;
     ball.y = this.getPaddleY() - this.paddleHeight / 2 - ball.radius - 2;
     ball.vx = 0;
     ball.vy = 0;
@@ -364,18 +376,17 @@ export class BrickBreakerScene extends Phaser.Scene {
     const tiltSource = this.virtualLeft ? -1 : this.virtualRight ? 1 : (Math.random() < 0.5 ? -1 : 1);
     const horizontalTilt = Phaser.Math.Clamp(tiltSource * Phaser.Math.FloatBetween(0.22, 0.48), -0.65, 0.65);
     const speed = this.getBallSpeed();
-    const vx = speed * horizontalTilt;
-    const vy = -Math.sqrt(Math.max(1, speed * speed - vx * vx));
 
-    for (const ball of attachedBalls) {
+    attachedBalls.forEach((ball, index) => {
+      const spread = (attachedBalls.length - 1) / 2;
+      const offset = (index - spread) * 0.14;
+      const vx = speed * Phaser.Math.Clamp(horizontalTilt + offset, -0.65, 0.65);
+      const vy = -Math.sqrt(Math.max(1, speed * speed - vx * vx));
+
       ball.attached = false;
       ball.vx = vx;
       ball.vy = vy;
-      if (this.pendingMultiBall && this.balls.length < 2) {
-        this.spawnCloneBall(ball);
-        this.pendingMultiBall = false;
-      }
-    }
+    });
 
     if (this.shootAmmo > 0) {
       this.fireBullet();
@@ -428,6 +439,8 @@ export class BrickBreakerScene extends Phaser.Scene {
     if (hitBrick && this.bricks.every((brick) => !brick.active)) {
       this.level += 1;
       this.createBricks();
+      this.resetBall(true);
+      this.updateStatusDisplay();
     }
 
     if (ball.y - ball.radius > this.field.bottom) {
@@ -468,12 +481,10 @@ export class BrickBreakerScene extends Phaser.Scene {
       return;
     }
 
-    this.pendingMultiBall = false;
     this.resetBall(true);
   }
 
   private resetBall(attached = true): void {
-    this.pendingMultiBall = false;
     this.balls = [{
       x: this.paddleX,
       y: this.getPaddleY() - this.paddleHeight / 2 - 10,
@@ -622,7 +633,8 @@ export class BrickBreakerScene extends Phaser.Scene {
     const now = this.time.now;
 
     if (kind === 'multi') {
-      this.pendingMultiBall = true;
+      this.splitCurrentBalls();
+      this.updateStatusDisplay();
       return;
     }
 
@@ -655,24 +667,45 @@ export class BrickBreakerScene extends Phaser.Scene {
     this.updateStatusDisplay();
   }
 
-  private spawnCloneBall(source: BallState): void {
-    if (this.balls.length >= 2) {
-      return;
+  private splitCurrentBalls(): void {
+    const currentBalls = [...this.balls];
+    const clones: BallState[] = [];
+
+    for (const source of currentBalls) {
+      const speed = Math.sqrt(source.vx * source.vx + source.vy * source.vy) || this.getBallSpeed();
+
+      if (source.attached) {
+        clones.push({
+          x: source.x,
+          y: source.y,
+          vx: 0,
+          vy: 0,
+          radius: source.radius,
+          attached: true,
+        });
+        continue;
+      }
+
+      let cloneVx = -source.vx;
+      if (Math.abs(cloneVx) < 12) {
+        const direction = source.vx >= 0 ? -1 : 1;
+        cloneVx = speed * direction * 0.34;
+      }
+
+      const cloneSpeed = speed;
+      const cloneVy = -Math.sqrt(Math.max(1, cloneSpeed * cloneSpeed - cloneVx * cloneVx));
+
+      clones.push({
+        x: source.x,
+        y: source.y,
+        vx: cloneVx,
+        vy: cloneVy,
+        radius: source.radius,
+        attached: false,
+      });
     }
 
-    const cloneSpeed = Math.sqrt(source.vx * source.vx + source.vy * source.vy) || this.getBallSpeed();
-    const tilt = source.vx === 0 ? 0.4 : -Math.sign(source.vx) * 0.42;
-    const vx = cloneSpeed * tilt;
-    const vy = -Math.sqrt(Math.max(1, cloneSpeed * cloneSpeed - vx * vx));
-
-    this.balls.push({
-      x: source.x,
-      y: source.y,
-      vx,
-      vy,
-      radius: source.radius,
-      attached: false,
-    });
+    this.balls.push(...clones);
   }
 
   private fireBullet(): void {
