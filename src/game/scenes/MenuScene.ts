@@ -185,7 +185,7 @@ export class MenuScene extends Phaser.Scene {
     this.add.text(leftX, config.y - layout.cardHeight * 0.02, config.title, {
       color: '#f8fafc',
       fontFamily: 'Arial, sans-serif',
-      fontSize: layout.portrait ? '21px' : '28px',
+      fontSize: layout.portrait ? '17px' : '24px',
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     }).setOrigin(0, 0.5);
