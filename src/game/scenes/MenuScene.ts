@@ -1,6 +1,12 @@
 import Phaser from 'phaser';
 import { configureHiDpiCamera, TEXT_RESOLUTION } from '../render';
-import { getDodgeHighScore, getSnakeHighScore, getTetrisHighScore, getWhackHighScore } from '../storage/highScore';
+import {
+  getBrickHighScore,
+  getDodgeHighScore,
+  getSnakeHighScore,
+  getTetrisHighScore,
+  getWhackHighScore,
+} from '../storage/highScore';
 
 type GameCardConfig = {
   y: number;
@@ -37,6 +43,7 @@ export class MenuScene extends Phaser.Scene {
     const dodgeHighScore = getDodgeHighScore();
     const whackHighScore = getWhackHighScore();
     const tetrisHighScore = getTetrisHighScore();
+    const brickHighScore = getBrickHighScore();
     const layout = this.getLayout();
     const width = this.scale.width;
 
@@ -121,6 +128,18 @@ export class MenuScene extends Phaser.Scene {
       accent: 0xf87171,
       accentColor: '#f87171',
       start: startTetris,
+    }, layout);
+    this.createGameCard({
+      y: layout.cardYs[4],
+      label: '5  BRICK',
+      title: '벽돌깨기',
+      description: '패들을 좌우로 움직여 공을 튕기고 벽돌을 깨세요.',
+      highScore: brickHighScore,
+      accent: 0xf5f1e8,
+      accentColor: '#f5f1e8',
+      start: () => {
+        this.scene.start('BrickBreakerScene');
+      },
     }, layout);
 
     this.add
@@ -243,17 +262,17 @@ export class MenuScene extends Phaser.Scene {
         subtitleY: 88,
         cardX: 230,
         cardWidth: 560,
-        cardHeight: 94,
-        cardYs: [146, 250, 354, 458],
+        cardHeight: 86,
+        cardYs: [138, 232, 326, 420, 514],
         footerY: 516,
       };
     }
 
     const cardX = 24;
     const cardWidth = width - 48;
-    const cardHeight = Math.min(136, Math.floor((height - 270) / 4));
+    const cardHeight = Math.min(108, Math.floor((height - 330) / 5));
     const gap = 12;
-    const firstCardY = 150;
+    const firstCardY = 134;
 
     return {
       portrait: true,
@@ -268,6 +287,7 @@ export class MenuScene extends Phaser.Scene {
         firstCardY + cardHeight + gap,
         firstCardY + (cardHeight + gap) * 2,
         firstCardY + (cardHeight + gap) * 3,
+        firstCardY + (cardHeight + gap) * 4,
       ],
       footerY: height - 30,
     };

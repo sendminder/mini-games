@@ -22,6 +22,7 @@ const GAME_TABS: GameTab[] = [
   { key: 'dodge', label: '똥피하기', accent: 0xf59e0b, color: '#f59e0b' },
   { key: 'whack', label: '두더지', accent: 0x60a5fa, color: '#60a5fa' },
   { key: 'tetris', label: '테트리스', accent: 0x38bdf8, color: '#38bdf8' },
+  { key: 'brick', label: '벽돌깨기', accent: 0xfb7185, color: '#fb7185' },
 ];
 
 export class RankScene extends Phaser.Scene {
@@ -50,7 +51,7 @@ export class RankScene extends Phaser.Scene {
     const backButtonX = portrait ? 72 : 84;
     const backButtonY = chrome.backButtonY;
     const tabY = portrait ? 132 : 138;
-    const startY = portrait ? 186 : 198;
+    const startY = portrait ? 226 : 198;
 
     this.add
       .text(titleX, titleY, '글로벌 순위', {
@@ -90,7 +91,7 @@ export class RankScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.statusText = this.add
-      .text(titleX, portrait ? startY + 32 : startY + 52, '불러오는 중...', {
+      .text(titleX, portrait ? 214 : startY + 52, '불러오는 중...', {
         color: '#94a3b8',
         fontFamily: 'Arial, sans-serif',
         fontSize: portrait ? '12px' : '17px',
@@ -107,42 +108,74 @@ export class RankScene extends Phaser.Scene {
   private createTabs(y: number): void {
     const width = this.scale.width;
     const portrait = this.isPortrait();
-    const tabWidth = portrait ? Math.min(86, Math.floor((width - 32) / GAME_TABS.length)) : 160;
-    const tabHeight = portrait ? 38 : 50;
-    const totalWidth = tabWidth * GAME_TABS.length + 16 * (GAME_TABS.length - 1);
+    const tabHeight = portrait ? 36 : 50;
+
+    if (portrait) {
+      const topRowTabs = GAME_TABS.slice(0, 3);
+      const bottomRowTabs = GAME_TABS.slice(3);
+      const topWidth = Math.min(108, Math.floor((width - 56) / 3));
+      const topGap = 10;
+      const topTotalWidth = topWidth * topRowTabs.length + topGap * (topRowTabs.length - 1);
+      const topStartX = width / 2 - topTotalWidth / 2 + topWidth / 2;
+      const secondWidth = Math.min(150, Math.floor((width - 48) / 2));
+      const secondGap = 14;
+      const secondTotalWidth = secondWidth * bottomRowTabs.length + secondGap * (bottomRowTabs.length - 1);
+      const secondStartX = width / 2 - secondTotalWidth / 2 + secondWidth / 2;
+
+      topRowTabs.forEach((tab, index) => {
+        this.createRankTab(tab, topStartX + index * (topWidth + topGap), y, topWidth, tabHeight);
+      });
+
+      bottomRowTabs.forEach((tab, index) => {
+        this.createRankTab(tab, secondStartX + index * (secondWidth + secondGap), y + tabHeight + 12, secondWidth, tabHeight);
+      });
+      return;
+    }
+
+    const tabWidth = 160;
+    const totalWidth = tabWidth * GAME_TABS.length + 12 * (GAME_TABS.length - 1);
     const startX = width / 2 - totalWidth / 2 + tabWidth / 2;
 
     GAME_TABS.forEach((tab, index) => {
-      const x = startX + index * (tabWidth + 16);
-      const isActive = tab.key === this.currentGame;
-      const button = this.add
-        .rectangle(x, y, tabWidth, tabHeight, isActive ? tab.accent : 0x111c30, isActive ? 1 : 0.94)
-        .setStrokeStyle(2, isActive ? tab.accent : 0x334155)
-        .setInteractive({ useHandCursor: true });
-
-      button.on('pointerdown', () => {
-        this.currentGame = tab.key;
-        void this.loadLeaderboard(tab.key);
-      });
-      button.on('pointerover', () => {
-        button.setFillStyle(tab.accent, 1).setStrokeStyle(2, 0xffffff);
-      });
-      button.on('pointerout', () => {
-        const active = tab.key === this.currentGame;
-        button.setFillStyle(active ? tab.accent : 0x111c30, active ? 1 : 0.94).setStrokeStyle(2, active ? tab.accent : 0x334155);
-      });
-
-      this.add
-        .text(x, y, tab.label, {
-          color: '#f8fafc',
-          fontFamily: 'Arial, sans-serif',
-          fontSize: portrait ? '12px' : '15px',
-          fontStyle: 'bold',
-          resolution: TEXT_RESOLUTION,
-          wordWrap: { width: tabWidth - 18 },
-        })
-        .setOrigin(0.5);
+      this.createRankTab(tab, startX + index * (tabWidth + 12), y, tabWidth, tabHeight);
     });
+  }
+
+  private createRankTab(
+    tab: GameTab,
+    x: number,
+    y: number,
+    tabWidth: number,
+    tabHeight: number,
+  ): void {
+    const isActive = tab.key === this.currentGame;
+    const button = this.add
+      .rectangle(x, y, tabWidth, tabHeight, isActive ? tab.accent : 0x111c30, isActive ? 1 : 0.94)
+      .setStrokeStyle(2, isActive ? tab.accent : 0x334155)
+      .setInteractive({ useHandCursor: true });
+
+    button.on('pointerdown', () => {
+      this.currentGame = tab.key;
+      void this.loadLeaderboard(tab.key);
+    });
+    button.on('pointerover', () => {
+      button.setFillStyle(tab.accent, 1).setStrokeStyle(2, 0xffffff);
+    });
+    button.on('pointerout', () => {
+      const active = tab.key === this.currentGame;
+      button.setFillStyle(active ? tab.accent : 0x111c30, active ? 1 : 0.94).setStrokeStyle(2, active ? tab.accent : 0x334155);
+    });
+
+    this.add
+      .text(x, y, tab.label, {
+        color: '#f8fafc',
+        fontFamily: 'Arial, sans-serif',
+        fontSize: this.isPortrait() ? '11px' : '15px',
+        fontStyle: 'bold',
+        resolution: TEXT_RESOLUTION,
+        wordWrap: { width: tabWidth - 18 },
+      })
+      .setOrigin(0.5);
   }
 
   private async loadLeaderboard(gameKey: GameKey): Promise<void> {
@@ -173,10 +206,10 @@ export class RankScene extends Phaser.Scene {
   private renderRows(entries: Awaited<ReturnType<typeof fetchLeaderboard>>): void {
     const width = this.scale.width;
     const portrait = this.isPortrait();
-    const rowStartY = portrait ? 234 : 218;
-    const rowGap = portrait ? 42 : 50;
-    const rankX = portrait ? 40 : 90;
-    const nameX = portrait ? 104 : 220;
+    const rowStartY = portrait ? 248 : 218;
+    const rowGap = portrait ? 36 : 50;
+    const rankX = portrait ? 34 : 90;
+    const nameX = portrait ? 92 : 220;
     const scoreX = width - (portrait ? 16 : 90);
     const playerKey = getStoredPlayerKey();
 
@@ -190,7 +223,7 @@ export class RankScene extends Phaser.Scene {
         .text(rankX, y, `${index + 1}`, {
           color: highlight ? '#93c5fd' : '#94a3b8',
           fontFamily: 'Arial, sans-serif',
-          fontSize: portrait ? '13px' : '18px',
+          fontSize: portrait ? '12px' : '18px',
           fontStyle: 'bold',
           resolution: TEXT_RESOLUTION,
         })
@@ -199,7 +232,7 @@ export class RankScene extends Phaser.Scene {
         .text(nameX, y, entry.nickname, {
           color: '#f8fafc',
           fontFamily: 'Arial, sans-serif',
-          fontSize: portrait ? '13px' : '19px',
+          fontSize: portrait ? '12px' : '19px',
           fontStyle: highlight ? 'bold' : 'normal',
           resolution: TEXT_RESOLUTION,
         })
@@ -208,7 +241,7 @@ export class RankScene extends Phaser.Scene {
         .text(scoreX, y, String(entry.score), {
           color: highlight ? '#facc15' : '#f8fafc',
           fontFamily: 'Arial, sans-serif',
-          fontSize: portrait ? '13px' : '20px',
+          fontSize: portrait ? '12px' : '20px',
           fontStyle: 'bold',
           resolution: TEXT_RESOLUTION,
         })

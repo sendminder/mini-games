@@ -3,6 +3,7 @@ import { RENDER_SCALE } from './render';
 import { DodgeScene } from './scenes/DodgeScene';
 import { MenuScene } from './scenes/MenuScene';
 import { RankScene } from './scenes/RankScene';
+import { BrickBreakerScene } from './scenes/BrickBreakerScene';
 import { SnakeScene } from './scenes/SnakeScene';
 import { TetrisScene } from './scenes/TetrisScene';
 import { WhackScene } from './scenes/WhackScene';
@@ -18,5 +19,5 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
   backgroundColor: '#111827',
-  scene: [MenuScene, RankScene, SnakeScene, DodgeScene, WhackScene, TetrisScene],
+  scene: [MenuScene, RankScene, SnakeScene, DodgeScene, WhackScene, TetrisScene, BrickBreakerScene],
 };
