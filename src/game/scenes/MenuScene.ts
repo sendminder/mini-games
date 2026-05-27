@@ -40,7 +40,7 @@ export class MenuScene extends Phaser.Scene {
     const width = this.scale.width;
 
     this.add
-      .text(layout.titleX, layout.titleY, 'MINI GAME LIST', {
+      .text(layout.titleX, layout.titleY, 'MINI GAMES', {
         color: '#f8fafc',
         fontFamily: 'Arial, sans-serif',
         fontSize: layout.portrait ? '28px' : '38px',
@@ -59,10 +59,10 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.createActionButton(
-      layout.portrait ? width / 2 : width - 70,
-      layout.portrait ? 120 : 44,
-      layout.portrait ? 176 : 118,
-      layout.portrait ? 36 : 34,
+      layout.portrait ? width - 54 : width - 4,
+      layout.portrait ? 42 : 44,
+      layout.portrait ? 80 : 90,
+      layout.portrait ? 24 : 26,
       '순위보기',
       () => {
         this.scene.start('RankScene');
