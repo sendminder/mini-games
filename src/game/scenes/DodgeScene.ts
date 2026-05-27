@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { configureHiDpiCamera, TEXT_RESOLUTION } from '../render';
 import { getDodgeHighScore, saveDodgeHighScore } from '../storage/highScore';
 import { submitScore } from '../storage/leaderboard';
+import { createScreenChrome } from '../ui/screen';
 
 type FallingObstacle = {
   x: number;
@@ -66,19 +67,19 @@ export class DodgeScene extends Phaser.Scene {
     this.field = this.getFieldLayout();
     this.resetState();
     this.highScore = getDodgeHighScore();
-    const portrait = this.isPortrait();
-    const width = this.scale.width;
-    const height = this.scale.height;
+    const chrome = createScreenChrome(this.scale.width, this.scale.height);
+    const portrait = chrome.portrait;
+    const width = chrome.width;
     const titleX = portrait ? 24 : 150;
-    const titleY = portrait ? 18 : 34;
+    const titleY = chrome.titleY;
     const highScoreX = portrait ? 16 : 810;
     const scoreX = portrait ? 16 : 810;
     const timeX = portrait ? width / 2 : 480;
     const timeY = portrait ? 56 : 46;
-    const scoreY = portrait ? 42 : 53;
-    const footerY = portrait ? height - 24 : 509;
-    const backButtonX = width - 56;
-    const backButtonY = portrait ? 18 : 48;
+    const scoreY = chrome.topRowY;
+    const footerY = chrome.footerY;
+    const backButtonX = chrome.backButtonX;
+    const backButtonY = chrome.backButtonY;
     const hintText = portrait
       ? '좌/우 버튼 또는 키보드  |  양 끝은 연결됨'
       : '← → 길게 눌러 가속  |  양 끝은 연결됨';
@@ -86,7 +87,7 @@ export class DodgeScene extends Phaser.Scene {
     this.add.text(titleX, titleY, '똥피하기', {
       color: '#f8fafc',
       fontFamily: 'Arial, sans-serif',
-      fontSize: portrait ? '19px' : '27px',
+      fontSize: `${chrome.titleFontSize}px`,
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });
@@ -94,7 +95,7 @@ export class DodgeScene extends Phaser.Scene {
     this.timeText = this.add.text(timeX, timeY, '생존  0.0초', {
       color: '#94a3b8',
       fontFamily: 'Arial, sans-serif',
-      fontSize: portrait ? '11px' : '16px',
+      fontSize: `${chrome.bodyFontSize}px`,
       resolution: TEXT_RESOLUTION,
     });
     this.timeText.setOrigin(0.5);
@@ -102,7 +103,7 @@ export class DodgeScene extends Phaser.Scene {
     this.highScoreText = this.add.text(highScoreX, portrait ? 24 : 30, `최고  ${this.highScore}`, {
       color: '#facc15',
       fontFamily: 'Arial, sans-serif',
-      fontSize: portrait ? '11px' : '15px',
+      fontSize: `${chrome.smallFontSize}px`,
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });
@@ -111,7 +112,7 @@ export class DodgeScene extends Phaser.Scene {
     this.scoreText = this.add.text(scoreX, scoreY, '피함  0', {
       color: '#f8fafc',
       fontFamily: 'Arial, sans-serif',
-      fontSize: portrait ? '15px' : '18px',
+      fontSize: `${chrome.bodyFontSize}px`,
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });
@@ -133,7 +134,7 @@ export class DodgeScene extends Phaser.Scene {
       .text(portrait ? width / 2 : 480, footerY, hintText, {
         color: '#94a3b8',
         fontFamily: 'Arial, sans-serif',
-        fontSize: portrait ? '12px' : '15px',
+        fontSize: `${chrome.smallFontSize}px`,
         resolution: TEXT_RESOLUTION,
       })
       .setOrigin(0.5);

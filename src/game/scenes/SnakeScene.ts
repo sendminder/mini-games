@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { configureHiDpiCamera, TEXT_RESOLUTION } from '../render';
 import { getSnakeHighScore, saveSnakeHighScore } from '../storage/highScore';
 import { submitScore } from '../storage/leaderboard';
+import { createScreenChrome } from '../ui/screen';
 
 type Cell = {
   x: number;
@@ -68,23 +69,24 @@ export class SnakeScene extends Phaser.Scene {
     this.board = this.getBoardLayout();
     this.resetState();
     this.highScore = getSnakeHighScore();
-    const portrait = this.isPortrait();
-    const width = this.scale.width;
-    const height = this.scale.height;
+    const chrome = createScreenChrome(this.scale.width, this.scale.height);
+    const portrait = chrome.portrait;
+    const width = chrome.width;
+    const height = chrome.height;
     const titleX = portrait ? 24 : 168;
-    const titleY = portrait ? 18 : 33;
+    const titleY = chrome.titleY;
     const highScoreX = portrait ? 16 : 792;
     const scoreX = portrait ? 16 : 792;
-    const scoreY = portrait ? 44 : 53;
-    const footerY = portrait ? height - 24 : 514;
-    const backButtonX = width - 56;
-    const backButtonY = portrait ? 18 : 48;
+    const scoreY = chrome.topRowY;
+    const footerY = chrome.footerY;
+    const backButtonX = chrome.backButtonX;
+    const backButtonY = chrome.backButtonY;
 
     this.add
       .text(titleX, titleY, '사과 먹는 애벌레', {
         color: '#f8fafc',
         fontFamily: 'Arial, sans-serif',
-        fontSize: portrait ? '19px' : '27px',
+        fontSize: `${chrome.titleFontSize}px`,
         fontStyle: 'bold',
         resolution: TEXT_RESOLUTION,
       });
@@ -92,7 +94,7 @@ export class SnakeScene extends Phaser.Scene {
     this.highScoreText = this.add.text(highScoreX, portrait ? 24 : 30, `최고  ${this.highScore}`, {
       color: '#facc15',
       fontFamily: 'Arial, sans-serif',
-      fontSize: portrait ? '12px' : '15px',
+      fontSize: `${chrome.smallFontSize}px`,
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });
@@ -101,7 +103,7 @@ export class SnakeScene extends Phaser.Scene {
     this.scoreText = this.add.text(scoreX, scoreY, '점수  0', {
       color: '#f8fafc',
       fontFamily: 'Arial, sans-serif',
-      fontSize: portrait ? '15px' : '18px',
+      fontSize: `${chrome.bodyFontSize}px`,
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });
@@ -122,7 +124,7 @@ export class SnakeScene extends Phaser.Scene {
       .text(portrait ? width / 2 : 480, footerY, '화살표 키로 시작', {
         color: '#94a3b8',
         fontFamily: 'Arial, sans-serif',
-        fontSize: portrait ? '11px' : '16px',
+        fontSize: `${chrome.smallFontSize}px`,
         resolution: TEXT_RESOLUTION,
       })
       .setOrigin(0.5);

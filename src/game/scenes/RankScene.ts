@@ -8,6 +8,7 @@ import {
   hasLeaderboardConfig,
   getStoredPlayerKey,
 } from '../storage/leaderboard';
+import { createScreenChrome } from '../ui/screen';
 
 type GameTab = {
   key: GameKey;
@@ -39,13 +40,14 @@ export class RankScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor('#08111f');
     this.currentGame = data?.gameKey ?? 'snake';
 
-    const width = this.scale.width;
-    const portrait = this.isPortrait();
+    const chrome = createScreenChrome(this.scale.width, this.scale.height);
+    const width = chrome.width;
+    const portrait = chrome.portrait;
     const titleX = width / 2;
     const titleY = portrait ? 36 : 50;
     const subtitleY = portrait ? 62 : 90;
     const backButtonX = portrait ? 72 : 84;
-    const backButtonY = portrait ? 24 : 48;
+    const backButtonY = chrome.backButtonY;
     const tabY = portrait ? 132 : 138;
     const startY = portrait ? 184 : 196;
 
