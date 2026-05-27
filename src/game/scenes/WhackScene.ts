@@ -368,20 +368,19 @@ export class WhackScene extends Phaser.Scene {
     const width = this.scale.width;
     const height = this.scale.height;
     const panelWidth = portrait ? Math.min(360, width - 32) : 410;
-    const panelHeight = portrait ? 176 : 174;
+    const panelHeight = portrait ? 168 : 130;
     const panelX = width / 2;
-    const panelY = portrait ? Math.round(height * 0.48) : 286;
+    const panelY = portrait ? Math.round(height * 0.42) : 286;
     const titleY = portrait ? panelY - 42 : 247;
     const bodyY = portrait ? panelY - 2 : 289;
     const buttonY = portrait ? panelY + 42 : 332;
-    const footerY = portrait ? panelY + 78 : 370;
-    const buttonWidth = portrait ? 146 : 152;
-    const buttonHeight = 38;
+    const buttonWidth = portrait ? 200 : 170;
+    const buttonHeight = 42;
 
     this.add
       .rectangle(panelX, panelY, panelWidth, panelHeight, 0x060d18, 0.96)
       .setStrokeStyle(2, 0x334155)
-      .setDepth(100);
+      .setDepth(1000);
     this.add
       .text(panelX, titleY, '게임 오버', {
         color: '#f8fafc',
@@ -391,7 +390,7 @@ export class WhackScene extends Phaser.Scene {
         resolution: TEXT_RESOLUTION,
       })
       .setOrigin(0.5)
-      .setDepth(101);
+      .setDepth(1001);
     this.add
       .text(panelX, bodyY, `점수 ${this.score}  |  ${(this.elapsedMs / 1000).toFixed(1)}초`, {
         color: '#cbd5e1',
@@ -400,13 +399,13 @@ export class WhackScene extends Phaser.Scene {
         resolution: TEXT_RESOLUTION,
       })
       .setOrigin(0.5)
-      .setDepth(101);
+      .setDepth(1001);
 
     const restartButton = this.add
       .rectangle(panelX, buttonY, buttonWidth, buttonHeight, 0x1d4ed8, 0.96)
       .setStrokeStyle(2, 0x93c5fd)
       .setInteractive({ useHandCursor: true })
-      .setDepth(101);
+      .setDepth(1002);
     restartButton.on('pointerdown', () => {
       this.restart();
     });
@@ -426,18 +425,7 @@ export class WhackScene extends Phaser.Scene {
         resolution: TEXT_RESOLUTION,
       })
       .setOrigin(0.5)
-      .setDepth(102);
-
-    this.add
-      .text(panelX, footerY, '뒤로가기 버튼으로 목록으로 돌아갈 수 있습니다', {
-        color: '#60a5fa',
-        fontFamily: 'Arial, sans-serif',
-        fontSize: portrait ? '12px' : '14px',
-        fontStyle: 'bold',
-        resolution: TEXT_RESOLUTION,
-      })
-      .setOrigin(0.5)
-      .setDepth(101);
+      .setDepth(1003);
   }
 
   private restart(): void {

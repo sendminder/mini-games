@@ -23,6 +23,13 @@ const LANDSCAPE_BOARD: BoardLayout = {
   y: 100,
 };
 
+const PORTRAIT_BOARD = {
+  columns: 24,
+  rows: 20,
+  topRatio: 0.12,
+  footerGap: 168,
+} as const;
+
 const INITIAL_MOVE_DELAY = 125;
 const SPEED_UP_PER_APPLE = 5;
 const MIN_MOVE_DELAY = 60;
@@ -306,17 +313,24 @@ export class SnakeScene extends Phaser.Scene {
     if (this.apple) {
       const appleX = this.board.x + this.apple.x * this.board.cellSize + this.board.cellSize / 2;
       const appleY = this.board.y + this.apple.y * this.board.cellSize + this.board.cellSize / 2;
+      const appleRadius = Math.max(9, Math.floor(this.board.cellSize * 0.42));
       this.graphics.fillStyle(0xef4444);
-      this.graphics.fillCircle(appleX, appleY + 1, 8);
+      this.graphics.fillCircle(appleX, appleY + 1, appleRadius);
       this.graphics.lineStyle(3, 0x4ade80);
-      this.graphics.lineBetween(appleX, appleY - 7, appleX + 4, appleY - 12);
+      this.graphics.lineBetween(appleX, appleY - appleRadius + 1, appleX + 5, appleY - appleRadius - 4);
     }
 
     this.snake.forEach((part, index) => {
-      const x = this.board.x + part.x * this.board.cellSize + 3;
-      const y = this.board.y + part.y * this.board.cellSize + 3;
+      const padding = Math.max(1, Math.floor(this.board.cellSize * 0.08));
+      const radius = Math.max(4, Math.floor(this.board.cellSize * 0.22));
       this.graphics.fillStyle(index === 0 ? 0x86efac : 0x22c55e);
-      this.graphics.fillRoundedRect(x, y, this.board.cellSize - 6, this.board.cellSize - 6, 5);
+      this.graphics.fillRoundedRect(
+        this.board.x + part.x * this.board.cellSize + padding,
+        this.board.y + part.y * this.board.cellSize + padding,
+        this.board.cellSize - padding * 2,
+        this.board.cellSize - padding * 2,
+        radius,
+      );
     });
   }
 
@@ -327,17 +341,20 @@ export class SnakeScene extends Phaser.Scene {
     const portrait = this.isPortrait();
     const width = this.scale.width;
     const height = this.scale.height;
-    const panelWidth = portrait ? Math.min(360, width - 32) : 390;
-    const panelHeight = portrait ? 168 : 174;
+    const panelWidth = portrait ? Math.min(360, width - 24) : 390;
+    const panelHeight = portrait ? 168 : 130;
     const panelX = width / 2;
-    const panelY = portrait ? Math.round(height * 0.45) : 292;
+    const panelY = portrait ? Math.round(height * 0.42) : 292;
     const titleY = portrait ? panelY - 44 : 255;
     const bodyY = portrait ? panelY - 2 : 294;
-    const footerY = portrait ? panelY + 40 : 335;
+    const buttonY = portrait ? panelY + 42 : 334;
+    const primaryWidth = portrait ? 200 : 170;
+    const buttonHeight = portrait ? 50 : 42;
 
     this.add
       .rectangle(panelX, panelY, panelWidth, panelHeight, 0x060d18, 0.96)
-      .setStrokeStyle(2, 0x334155);
+      .setStrokeStyle(2, 0x334155)
+      .setDepth(1000);
 
     this.add
       .text(panelX, titleY, '게임 오버', {
@@ -347,7 +364,8 @@ export class SnakeScene extends Phaser.Scene {
         fontStyle: 'bold',
         resolution: TEXT_RESOLUTION,
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(1001);
 
     this.add
       .text(panelX, bodyY, `${message}  |  점수 ${this.score}`, {
@@ -356,17 +374,39 @@ export class SnakeScene extends Phaser.Scene {
         fontSize: portrait ? '14px' : '16px',
         resolution: TEXT_RESOLUTION,
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(1001);
 
     this.add
-      .text(panelX, footerY, 'R: 다시 시작   뒤로가기 버튼', {
-        color: '#4ade80',
+      .rectangle(panelX + 3, buttonY + 3, primaryWidth, buttonHeight, 0x020617, 0.55)
+      .setDepth(1001);
+
+    const restartButton = this.add
+      .rectangle(panelX, buttonY, primaryWidth, buttonHeight, 0x2563eb, 1)
+      .setStrokeStyle(3, 0xbfdbfe)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(1002);
+    restartButton.on('pointerdown', () => {
+      this.restart();
+    });
+    restartButton.on('pointerover', () => {
+      restartButton.setFillStyle(0x3b82f6, 1).setStrokeStyle(3, 0xffffff);
+    });
+    restartButton.on('pointerout', () => {
+      restartButton.setFillStyle(0x2563eb, 1).setStrokeStyle(3, 0xbfdbfe);
+    });
+
+    this.add
+      .text(panelX, buttonY, '다시 시작', {
+        color: '#eff6ff',
         fontFamily: 'Arial, sans-serif',
-        fontSize: portrait ? '14px' : '16px',
+        fontSize: portrait ? '15px' : '16px',
         fontStyle: 'bold',
         resolution: TEXT_RESOLUTION,
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(1003);
+
   }
 
   private updateHighScore(): void {
@@ -397,27 +437,28 @@ export class SnakeScene extends Phaser.Scene {
 
     const width = this.scale.width;
     const height = this.scale.height;
+    const usableHeight = height - PORTRAIT_BOARD.footerGap;
     const cellSize = Math.max(
       14,
       Math.min(
-        15,
-        Math.floor(width / LANDSCAPE_BOARD.columns),
-        Math.floor((height - 220) / LANDSCAPE_BOARD.rows),
+        18,
+        Math.floor(width / PORTRAIT_BOARD.columns),
+        Math.floor(usableHeight / PORTRAIT_BOARD.rows),
       ),
     );
-    const boardWidth = LANDSCAPE_BOARD.columns * cellSize;
+    const boardWidth = PORTRAIT_BOARD.columns * cellSize;
     return {
-      columns: LANDSCAPE_BOARD.columns,
-      rows: LANDSCAPE_BOARD.rows,
+      columns: PORTRAIT_BOARD.columns,
+      rows: PORTRAIT_BOARD.rows,
       cellSize,
       x: Math.round((width - boardWidth) / 2),
-      y: Math.round(Math.max(118, height * 0.14)),
+      y: Math.round(Math.max(108, height * PORTRAIT_BOARD.topRatio)),
     };
   }
 
   private createTouchControls(width: number, height: number): void {
     const centerX = width / 2;
-    const centerY = height - 200;
+    const centerY = height - 176;
     const buttonSize = 70;
     const buttonGap = 14;
     const createButton = (x: number, y: number, label: string, onDown: () => void): void => {

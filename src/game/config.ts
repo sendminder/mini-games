@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { RENDER_SCALE } from './render';
 import { DodgeScene } from './scenes/DodgeScene';
 import { MenuScene } from './scenes/MenuScene';
 import { SnakeScene } from './scenes/SnakeScene';
@@ -10,6 +11,7 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
   width: window.innerWidth,
   height: window.innerHeight,
   scale: {
+    zoom: RENDER_SCALE,
     mode: Phaser.Scale.RESIZE,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },

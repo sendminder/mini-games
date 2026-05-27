@@ -421,17 +421,20 @@ export class DodgeScene extends Phaser.Scene {
     const portrait = this.isPortrait();
     const width = this.scale.width;
     const height = this.scale.height;
-    const panelWidth = portrait ? Math.min(360, width - 32) : 406;
-    const panelHeight = portrait ? 178 : 176;
+    const panelWidth = portrait ? Math.min(360, width - 24) : 406;
+    const panelHeight = portrait ? 168 : 130;
     const panelX = width / 2;
-    const panelY = portrait ? Math.round(height * 0.47) : 285;
+    const panelY = portrait ? Math.round(height * 0.42) : 285;
     const titleY = portrait ? panelY - 42 : 246;
     const bodyY = portrait ? panelY - 2 : 288;
-    const footerY = portrait ? panelY + 40 : 328;
+    const buttonY = portrait ? panelY + 42 : 334;
+    const primaryWidth = portrait ? 200 : 170;
+    const buttonHeight = portrait ? 50 : 42;
 
     this.add
       .rectangle(panelX, panelY, panelWidth, panelHeight, 0x060d18, 0.96)
-      .setStrokeStyle(2, 0x334155);
+      .setStrokeStyle(2, 0x334155)
+      .setDepth(1000);
     this.add
       .text(panelX, titleY, '게임 오버', {
         color: '#f8fafc',
@@ -440,7 +443,8 @@ export class DodgeScene extends Phaser.Scene {
         fontStyle: 'bold',
         resolution: TEXT_RESOLUTION,
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(1001);
     this.add
       .text(panelX, bodyY, `피한 똥 ${this.score}개  |  ${(this.elapsedMs / 1000).toFixed(1)}초 생존`, {
         color: '#cbd5e1',
@@ -448,16 +452,39 @@ export class DodgeScene extends Phaser.Scene {
         fontSize: portrait ? '14px' : '16px',
         resolution: TEXT_RESOLUTION,
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(1001);
+
     this.add
-      .text(panelX, footerY, 'R: 다시 시작   뒤로가기 버튼', {
-        color: '#f59e0b',
+      .rectangle(panelX + 3, buttonY + 3, primaryWidth, buttonHeight, 0x020617, 0.55)
+      .setDepth(1001);
+
+    const restartButton = this.add
+      .rectangle(panelX, buttonY, primaryWidth, buttonHeight, 0xf59e0b, 1)
+      .setStrokeStyle(3, 0xfde68a)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(1002);
+    restartButton.on('pointerdown', () => {
+      this.restart();
+    });
+    restartButton.on('pointerover', () => {
+      restartButton.setFillStyle(0xfbbf24, 1).setStrokeStyle(3, 0xffffff);
+    });
+    restartButton.on('pointerout', () => {
+      restartButton.setFillStyle(0xf59e0b, 1).setStrokeStyle(3, 0xfde68a);
+    });
+
+    this.add
+      .text(panelX, buttonY, '다시 시작', {
+        color: '#111827',
         fontFamily: 'Arial, sans-serif',
-        fontSize: portrait ? '14px' : '16px',
+        fontSize: portrait ? '15px' : '16px',
         fontStyle: 'bold',
         resolution: TEXT_RESOLUTION,
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(1003);
+
   }
 
   private createTouchControls(): void {
