@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { configureHiDpiCamera, TEXT_RESOLUTION } from '../render';
 import { getWhackHighScore, saveWhackHighScore } from '../storage/highScore';
-import { submitScore } from '../storage/leaderboard';
+import { fetchMyBestRecord, submitScore } from '../storage/leaderboard';
 import { createScreenChrome } from '../ui/screen';
 
 type MoleKind = 'mole' | 'bomb';
@@ -36,8 +36,8 @@ const LANDSCAPE_BOARD: BoardLayout = {
 };
 
 const HOLE_RADIUS = 46;
-const BASE_SHOW_MS = 1050;
-const MIN_SHOW_MS = 430;
+const BASE_SHOW_MS = 1500;
+const MIN_SHOW_MS = 600;
 const BASE_SPAWN_MS = 820;
 const MIN_SPAWN_MS = 340;
 const START_LIVES = 3;
@@ -107,7 +107,7 @@ export class WhackScene extends Phaser.Scene {
     this.highScoreText = this.add.text(highScoreX, portrait ? 24 : 30, `최고  ${this.highScore}`, {
       color: '#facc15',
       fontFamily: 'Arial, sans-serif',
-      fontSize: `${chrome.smallFontSize}px`,
+      fontSize: portrait ? '14px' : '18px',
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });
@@ -116,22 +116,22 @@ export class WhackScene extends Phaser.Scene {
     this.scoreText = this.add.text(scoreX, scoreY, '점수  0', {
       color: '#f8fafc',
       fontFamily: 'Arial, sans-serif',
-      fontSize: `${chrome.bodyFontSize}px`,
+      fontSize: portrait ? '15px' : '19px',
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });
     this.scoreText.setOrigin(0, 0);
 
-    this.lifeLabelText = this.add.text(titleX, lifeY, '목숨', {
+    this.lifeLabelText = this.add.text(portrait ? 16 : 156, lifeY, '목숨', {
       color: '#f59e0b',
       fontFamily: 'Arial, sans-serif',
-        fontSize: `${chrome.smallFontSize}px`,
+      fontSize: `${Math.max(chrome.smallFontSize, 14)}px`,
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });
     this.lifeLabelText.setOrigin(0, 0);
 
-    this.createLifeHearts(titleX + 52, lifeY + 1, chrome.smallFontSize);
+    this.createLifeHearts((portrait ? 72 : 206), lifeY + 1, chrome.smallFontSize);
 
     this.add
       .text(portrait ? width / 2 : 480, footerY, footerText, {
@@ -204,8 +204,8 @@ export class WhackScene extends Phaser.Scene {
   }
 
   private createLifeHearts(startX: number, y: number, fontSize: number): void {
-    const heartSize = Math.round(fontSize * 1.35);
-    const gap = Math.max(20, Math.round(heartSize * 1.05));
+    const heartSize = Math.round(fontSize * 2.2);
+    const gap = Math.max(28, Math.round(heartSize * 0.92));
 
     this.lifeHearts = [0, 1, 2].map((index) =>
       this.add
@@ -286,7 +286,7 @@ export class WhackScene extends Phaser.Scene {
   private spawnEntity(): void {
     const hole = this.holes[Phaser.Math.Between(0, this.holes.length - 1)];
     const seconds = this.elapsedMs / 1000;
-    const spawnChance = Math.min(0.68, 0.22 + seconds * 0.012);
+    const spawnChance = Math.min(0.6, 0.22 + seconds * 0.012);
     const isBomb = Math.random() < spawnChance;
     const showMs = Math.max(MIN_SHOW_MS, BASE_SHOW_MS - seconds * 22);
 
@@ -394,73 +394,101 @@ export class WhackScene extends Phaser.Scene {
   private finishGame(): void {
     this.finished = true;
     this.updateHighScore();
-    void submitScore('whack', this.score);
+    void this.showGameOver();
+  }
+
+  private async showGameOver(): Promise<void> {
+    await submitScore('whack', this.score);
+    const myBest = await fetchMyBestRecord('whack');
     const portrait = this.isPortrait();
     const width = this.scale.width;
     const height = this.scale.height;
-    const panelWidth = portrait ? Math.min(360, width - 32) : 410;
-    const panelHeight = portrait ? 176 : 130;
+    const panelWidth = portrait ? Math.min(360, width - 32) : 430;
+    const panelHeight = portrait ? 244 : 170;
     const panelX = width / 2;
-    const panelY = portrait ? Math.round(height * 0.40) : 286;
-    const titleY = portrait ? panelY - 48 : 247;
-    const bodyY = portrait ? panelY - 6 : 289;
-    const buttonY = portrait ? panelY + 46 : 332;
-    const buttonWidth = portrait ? 200 : 170;
-    const buttonHeight = 42;
+    const panelY = portrait ? Math.round(height * 0.37) : 282;
+    const titleY = portrait ? panelY - 78 : 244;
+    const currentScoreY = portrait ? panelY - 42 : 274;
+    const bestScoreY = portrait ? panelY - 16 : 302;
+    const rankY = portrait ? panelY + 10 : 330;
+    const rankButtonY = portrait ? panelY + 48 : 356;
+    const restartButtonY = portrait ? panelY + 92 : 392;
+    const primaryWidth = portrait ? 204 : 190;
+    const buttonHeight = portrait ? 38 : 40;
+    const bestScoreText = myBest ? `나의 최고점수  ${myBest.score}` : '나의 최고점수  없음';
+    const bestRankText = myBest ? `글로벌 등수  ${myBest.rank}위` : '글로벌 등수  -';
 
-    this.add
-      .rectangle(panelX + 3, panelY + 4, panelWidth, panelHeight, 0x020617, 0.55)
-      .setDepth(999);
+    this.add.rectangle(panelX + 3, panelY + 4, panelWidth, panelHeight, 0x020617, 0.55).setDepth(999);
+    this.add.rectangle(panelX, panelY, panelWidth, panelHeight, 0x060d18, 0.96).setStrokeStyle(2, 0x334155).setDepth(1000);
+    this.add.text(panelX, titleY, '게임 오버', {
+      color: '#f8fafc',
+      fontFamily: 'Arial, sans-serif',
+      fontSize: portrait ? '26px' : '30px',
+      fontStyle: 'bold',
+      resolution: TEXT_RESOLUTION,
+    }).setOrigin(0.5).setDepth(1001);
+    this.add.text(panelX, currentScoreY, `지금점수  ${this.score}`, {
+      color: '#cbd5e1',
+      fontFamily: 'Arial, sans-serif',
+      fontSize: portrait ? '14px' : '16px',
+      resolution: TEXT_RESOLUTION,
+    }).setOrigin(0.5).setDepth(1001);
+    this.add.text(panelX, bestScoreY, bestScoreText, {
+      color: '#f8fafc',
+      fontFamily: 'Arial, sans-serif',
+      fontSize: portrait ? '13px' : '15px',
+      fontStyle: 'bold',
+      resolution: TEXT_RESOLUTION,
+    }).setOrigin(0.5).setDepth(1001);
+    this.add.text(panelX, rankY, bestRankText, {
+      color: '#facc15',
+      fontFamily: 'Arial, sans-serif',
+      fontSize: portrait ? '13px' : '15px',
+      fontStyle: 'bold',
+      resolution: TEXT_RESOLUTION,
+    }).setOrigin(0.5).setDepth(1001);
 
-    this.add
-      .rectangle(panelX, panelY, panelWidth, panelHeight, 0x060d18, 0.96)
-      .setStrokeStyle(2, 0x334155)
-      .setDepth(1000);
-    this.add
-      .text(panelX, titleY, '게임 오버', {
-        color: '#f8fafc',
-        fontFamily: 'Arial, sans-serif',
-        fontSize: portrait ? '26px' : '30px',
-        fontStyle: 'bold',
-        resolution: TEXT_RESOLUTION,
-      })
-      .setOrigin(0.5)
-      .setDepth(1001);
-    this.add
-      .text(panelX, bodyY, `점수 ${this.score}  |  ${(this.elapsedMs / 1000).toFixed(1)}초`, {
-        color: '#cbd5e1',
-        fontFamily: 'Arial, sans-serif',
-        fontSize: portrait ? '14px' : '16px',
-        resolution: TEXT_RESOLUTION,
-      })
-      .setOrigin(0.5)
-      .setDepth(1001);
+    const rankButton = this.add.rectangle(panelX, rankButtonY, primaryWidth, buttonHeight, 0x1d4ed8, 0.96)
+      .setStrokeStyle(3, 0x93c5fd)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(1002);
+    rankButton.on('pointerdown', () => {
+      this.scene.start('RankScene', { gameKey: 'whack' });
+    });
+    rankButton.on('pointerover', () => {
+      rankButton.setFillStyle(0x2563eb, 0.98).setStrokeStyle(3, 0xbfdbfe);
+    });
+    rankButton.on('pointerout', () => {
+      rankButton.setFillStyle(0x1d4ed8, 0.96).setStrokeStyle(3, 0x93c5fd);
+    });
+    this.add.text(panelX, rankButtonY, '순위 확인하기', {
+      color: '#eff6ff',
+      fontFamily: 'Arial, sans-serif',
+      fontSize: portrait ? '14px' : '15px',
+      fontStyle: 'bold',
+      resolution: TEXT_RESOLUTION,
+    }).setOrigin(0.5).setDepth(1003);
 
-    const restartButton = this.add
-      .rectangle(panelX, buttonY, buttonWidth, buttonHeight, 0x1d4ed8, 0.96)
-      .setStrokeStyle(2, 0x93c5fd)
+    const restartButton = this.add.rectangle(panelX, restartButtonY, primaryWidth, buttonHeight, 0x1d4ed8, 0.96)
+      .setStrokeStyle(3, 0x93c5fd)
       .setInteractive({ useHandCursor: true })
       .setDepth(1002);
     restartButton.on('pointerdown', () => {
       this.restart();
     });
     restartButton.on('pointerover', () => {
-      restartButton.setFillStyle(0x2563eb, 0.98).setStrokeStyle(2, 0xbfdbfe);
+      restartButton.setFillStyle(0x2563eb, 0.98).setStrokeStyle(3, 0xbfdbfe);
     });
     restartButton.on('pointerout', () => {
-      restartButton.setFillStyle(0x1d4ed8, 0.96).setStrokeStyle(2, 0x93c5fd);
+      restartButton.setFillStyle(0x1d4ed8, 0.96).setStrokeStyle(3, 0x93c5fd);
     });
-
-    this.add
-      .text(panelX, buttonY, '다시 시작', {
-        color: '#eff6ff',
-        fontFamily: 'Arial, sans-serif',
-        fontSize: portrait ? '15px' : '16px',
-        fontStyle: 'bold',
-        resolution: TEXT_RESOLUTION,
-      })
-      .setOrigin(0.5)
-      .setDepth(1003);
+    this.add.text(panelX, restartButtonY, '다시 시작', {
+      color: '#eff6ff',
+      fontFamily: 'Arial, sans-serif',
+      fontSize: portrait ? '15px' : '16px',
+      fontStyle: 'bold',
+      resolution: TEXT_RESOLUTION,
+    }).setOrigin(0.5).setDepth(1003);
   }
 
   private restart(): void {

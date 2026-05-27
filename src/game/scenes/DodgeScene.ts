@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { configureHiDpiCamera, TEXT_RESOLUTION } from '../render';
 import { getDodgeHighScore, saveDodgeHighScore } from '../storage/highScore';
-import { submitScore } from '../storage/leaderboard';
+import { fetchMyBestRecord, submitScore } from '../storage/leaderboard';
 import { createScreenChrome } from '../ui/screen';
 
 type FallingObstacle = {
@@ -103,7 +103,7 @@ export class DodgeScene extends Phaser.Scene {
     this.highScoreText = this.add.text(highScoreX, portrait ? 24 : 30, `최고  ${this.highScore}`, {
       color: '#facc15',
       fontFamily: 'Arial, sans-serif',
-      fontSize: `${chrome.smallFontSize}px`,
+      fontSize: portrait ? '14px' : '18px',
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });
@@ -112,7 +112,7 @@ export class DodgeScene extends Phaser.Scene {
     this.scoreText = this.add.text(scoreX, scoreY, '피함  0', {
       color: '#f8fafc',
       fontFamily: 'Arial, sans-serif',
-      fontSize: `${chrome.bodyFontSize}px`,
+      fontSize: portrait ? '15px' : '19px',
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });
@@ -305,8 +305,8 @@ export class DodgeScene extends Phaser.Scene {
     const verticalDistance = Math.abs(obstacle.y - this.playerY);
 
     return (
-      horizontalDistance < obstacle.radius + PLAYER_HALF_WIDTH - 4 &&
-      verticalDistance < obstacle.radius + PLAYER_HALF_HEIGHT - 4
+      horizontalDistance < obstacle.radius + PLAYER_HALF_WIDTH - 8 &&
+      verticalDistance < obstacle.radius + PLAYER_HALF_HEIGHT - 8
     );
   }
 
@@ -322,10 +322,22 @@ export class DodgeScene extends Phaser.Scene {
     this.graphics.lineBetween(this.field.left, this.groundY, this.field.right, this.groundY);
 
     for (const obstacle of this.obstacles) {
-      this.drawPoop(obstacle.x, obstacle.y, obstacle.radius);
+      this.drawPoopWrapped(obstacle.x, obstacle.y, obstacle.radius);
     }
 
     this.drawPlayer(this.playerX);
+  }
+
+  private drawPoopWrapped(x: number, y: number, radius: number): void {
+    this.drawPoop(x, y, radius);
+
+    if (x - radius < this.field.left) {
+      this.drawPoop(x + this.fieldWidth, y, radius);
+    }
+
+    if (x + radius > this.field.right) {
+      this.drawPoop(x - this.fieldWidth, y, radius);
+    }
   }
 
   private drawPoop(x: number, y: number, radius: number): void {
@@ -391,9 +403,17 @@ export class DodgeScene extends Phaser.Scene {
 
   private spawnObstacle(yOffset: number): void {
     const radius = Phaser.Math.Between(12, 19);
+    const edgeChance = Math.min(0.22, 0.08 + this.elapsedMs / 14000);
+    const edgeSpan = Math.max(radius * 2, 42);
+    const spawnNearEdge = Math.random() < edgeChance;
+    const x = spawnNearEdge
+      ? (Math.random() < 0.5
+        ? Phaser.Math.Between(this.field.left + radius, this.field.left + edgeSpan)
+        : Phaser.Math.Between(this.field.right - edgeSpan, this.field.right - radius))
+      : Phaser.Math.Between(this.field.left + radius, this.field.right - radius);
 
     this.obstacles.push({
-      x: Phaser.Math.Between(this.field.left + radius, this.field.right - radius),
+      x,
       y: this.field.top - radius - yOffset,
       radius,
       speedOffset: Phaser.Math.Between(-15, 58),
@@ -420,54 +440,82 @@ export class DodgeScene extends Phaser.Scene {
   private finishGame(): void {
     this.finished = true;
     this.drawGame();
-    void submitScore('dodge', this.score);
+    void this.showGameOver();
+  }
+
+  private async showGameOver(): Promise<void> {
+    await submitScore('dodge', this.score);
+    const myBest = await fetchMyBestRecord('dodge');
     const portrait = this.isPortrait();
     const width = this.scale.width;
     const height = this.scale.height;
-    const panelWidth = portrait ? Math.min(360, width - 24) : 406;
-    const panelHeight = portrait ? 176 : 130;
+    const panelWidth = portrait ? Math.min(360, width - 24) : 430;
+    const panelHeight = portrait ? 244 : 170;
     const panelX = width / 2;
-    const panelY = portrait ? Math.round(height * 0.40) : 285;
-    const titleY = portrait ? panelY - 48 : 246;
-    const bodyY = portrait ? panelY - 6 : 288;
-    const buttonY = portrait ? panelY + 46 : 334;
-    const primaryWidth = portrait ? 200 : 170;
-    const buttonHeight = portrait ? 50 : 42;
+    const panelY = portrait ? Math.round(height * 0.37) : 282;
+    const titleY = portrait ? panelY - 78 : 244;
+    const currentScoreY = portrait ? panelY - 42 : 274;
+    const bestScoreY = portrait ? panelY - 16 : 302;
+    const rankY = portrait ? panelY + 10 : 330;
+    const rankButtonY = portrait ? panelY + 48 : 356;
+    const restartButtonY = portrait ? panelY + 92 : 392;
+    const primaryWidth = portrait ? 204 : 190;
+    const buttonHeight = portrait ? 38 : 40;
+    const bestScoreText = myBest ? `나의 최고점수  ${myBest.score}` : '나의 최고점수  없음';
+    const bestRankText = myBest ? `글로벌 등수  ${myBest.rank}위` : '글로벌 등수  -';
 
-    this.add
-      .rectangle(panelX + 3, panelY + 4, panelWidth, panelHeight, 0x020617, 0.55)
-      .setDepth(999);
+    this.add.rectangle(panelX + 3, panelY + 4, panelWidth, panelHeight, 0x020617, 0.55).setDepth(999);
+    this.add.rectangle(panelX, panelY, panelWidth, panelHeight, 0x060d18, 0.96).setStrokeStyle(2, 0x334155).setDepth(1000);
+    this.add.text(panelX, titleY, '게임 오버', {
+      color: '#f8fafc',
+      fontFamily: 'Arial, sans-serif',
+      fontSize: portrait ? '26px' : '30px',
+      fontStyle: 'bold',
+      resolution: TEXT_RESOLUTION,
+    }).setOrigin(0.5).setDepth(1001);
+    this.add.text(panelX, currentScoreY, `지금점수  ${this.score}`, {
+      color: '#cbd5e1',
+      fontFamily: 'Arial, sans-serif',
+      fontSize: portrait ? '14px' : '16px',
+      resolution: TEXT_RESOLUTION,
+    }).setOrigin(0.5).setDepth(1001);
+    this.add.text(panelX, bestScoreY, bestScoreText, {
+      color: '#f8fafc',
+      fontFamily: 'Arial, sans-serif',
+      fontSize: portrait ? '13px' : '15px',
+      fontStyle: 'bold',
+      resolution: TEXT_RESOLUTION,
+    }).setOrigin(0.5).setDepth(1001);
+    this.add.text(panelX, rankY, bestRankText, {
+      color: '#facc15',
+      fontFamily: 'Arial, sans-serif',
+      fontSize: portrait ? '13px' : '15px',
+      fontStyle: 'bold',
+      resolution: TEXT_RESOLUTION,
+    }).setOrigin(0.5).setDepth(1001);
 
-    this.add
-      .rectangle(panelX, panelY, panelWidth, panelHeight, 0x060d18, 0.96)
-      .setStrokeStyle(2, 0x334155)
-      .setDepth(1000);
-    this.add
-      .text(panelX, titleY, '게임 오버', {
-        color: '#f8fafc',
-        fontFamily: 'Arial, sans-serif',
-        fontSize: portrait ? '26px' : '30px',
-        fontStyle: 'bold',
-        resolution: TEXT_RESOLUTION,
-      })
-      .setOrigin(0.5)
-      .setDepth(1001);
-    this.add
-      .text(panelX, bodyY, `피한 똥 ${this.score}개  |  ${(this.elapsedMs / 1000).toFixed(1)}초 생존`, {
-        color: '#cbd5e1',
-        fontFamily: 'Arial, sans-serif',
-        fontSize: portrait ? '14px' : '16px',
-        resolution: TEXT_RESOLUTION,
-      })
-      .setOrigin(0.5)
-      .setDepth(1001);
+    const rankButton = this.add.rectangle(panelX, rankButtonY, primaryWidth, buttonHeight, 0x1d4ed8, 0.96)
+      .setStrokeStyle(3, 0x93c5fd)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(1002);
+    rankButton.on('pointerdown', () => {
+      this.scene.start('RankScene', { gameKey: 'dodge' });
+    });
+    rankButton.on('pointerover', () => {
+      rankButton.setFillStyle(0x2563eb, 0.98).setStrokeStyle(3, 0xbfdbfe);
+    });
+    rankButton.on('pointerout', () => {
+      rankButton.setFillStyle(0x1d4ed8, 0.96).setStrokeStyle(3, 0x93c5fd);
+    });
+    this.add.text(panelX, rankButtonY, '순위 확인하기', {
+      color: '#eff6ff',
+      fontFamily: 'Arial, sans-serif',
+      fontSize: portrait ? '14px' : '15px',
+      fontStyle: 'bold',
+      resolution: TEXT_RESOLUTION,
+    }).setOrigin(0.5).setDepth(1003);
 
-    this.add
-      .rectangle(panelX + 3, buttonY + 3, primaryWidth, buttonHeight, 0x020617, 0.55)
-      .setDepth(1001);
-
-    const restartButton = this.add
-      .rectangle(panelX, buttonY, primaryWidth, buttonHeight, 0xf59e0b, 1)
+    const restartButton = this.add.rectangle(panelX, restartButtonY, primaryWidth, buttonHeight, 0xf59e0b, 1)
       .setStrokeStyle(3, 0xfde68a)
       .setInteractive({ useHandCursor: true })
       .setDepth(1002);
@@ -480,18 +528,13 @@ export class DodgeScene extends Phaser.Scene {
     restartButton.on('pointerout', () => {
       restartButton.setFillStyle(0xf59e0b, 1).setStrokeStyle(3, 0xfde68a);
     });
-
-    this.add
-      .text(panelX, buttonY, '다시 시작', {
-        color: '#111827',
-        fontFamily: 'Arial, sans-serif',
-        fontSize: portrait ? '15px' : '16px',
-        fontStyle: 'bold',
-        resolution: TEXT_RESOLUTION,
-      })
-      .setOrigin(0.5)
-      .setDepth(1003);
-
+    this.add.text(panelX, restartButtonY, '다시 시작', {
+      color: '#111827',
+      fontFamily: 'Arial, sans-serif',
+      fontSize: portrait ? '15px' : '16px',
+      fontStyle: 'bold',
+      resolution: TEXT_RESOLUTION,
+    }).setOrigin(0.5).setDepth(1003);
   }
 
   private createTouchControls(): void {
@@ -542,7 +585,7 @@ export class DodgeScene extends Phaser.Scene {
     createButton(
       centerX - buttonWidth / 2 - gap,
       centerY,
-      '왼쪽',
+      '←',
       () => {
         this.virtualLeft = true;
       },
@@ -553,7 +596,7 @@ export class DodgeScene extends Phaser.Scene {
     createButton(
       centerX + buttonWidth / 2 + gap,
       centerY,
-      '오른쪽',
+      '→',
       () => {
         this.virtualRight = true;
       },

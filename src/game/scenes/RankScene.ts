@@ -55,7 +55,7 @@ export class RankScene extends Phaser.Scene {
       .text(titleX, titleY, '글로벌 순위', {
         color: '#f8fafc',
         fontFamily: 'Arial, sans-serif',
-        fontSize: portrait ? '25px' : '38px',
+        fontSize: portrait ? '28px' : '42px',
         fontStyle: 'bold',
         resolution: TEXT_RESOLUTION,
       })
@@ -65,7 +65,7 @@ export class RankScene extends Phaser.Scene {
       .text(titleX, subtitleY, '닉네임이 같아도 player key로 개별 기록을 저장합니다', {
         color: '#94a3b8',
         fontFamily: 'Arial, sans-serif',
-        fontSize: portrait ? '10px' : '14px',
+        fontSize: portrait ? '12px' : '15px',
         resolution: TEXT_RESOLUTION,
       })
       .setOrigin(0.5);
@@ -74,7 +74,7 @@ export class RankScene extends Phaser.Scene {
       .text(titleX, portrait ? 88 : 112, '', {
         color: '#cbd5e1',
         fontFamily: 'Arial, sans-serif',
-        fontSize: portrait ? '10px' : '15px',
+        fontSize: portrait ? '12px' : '17px',
         resolution: TEXT_RESOLUTION,
       })
       .setOrigin(0.5);
@@ -83,7 +83,7 @@ export class RankScene extends Phaser.Scene {
       .text(titleX, portrait ? 102 : 132, '', {
         color: '#94a3b8',
         fontFamily: 'Arial, sans-serif',
-        fontSize: portrait ? '10px' : '14px',
+        fontSize: portrait ? '12px' : '16px',
         resolution: TEXT_RESOLUTION,
       })
       .setOrigin(0.5);
@@ -92,7 +92,7 @@ export class RankScene extends Phaser.Scene {
       .text(titleX, portrait ? startY + 32 : startY + 52, '불러오는 중...', {
         color: '#94a3b8',
         fontFamily: 'Arial, sans-serif',
-        fontSize: portrait ? '10px' : '15px',
+        fontSize: portrait ? '12px' : '17px',
         resolution: TEXT_RESOLUTION,
       })
       .setOrigin(0.5);
@@ -107,7 +107,7 @@ export class RankScene extends Phaser.Scene {
     const width = this.scale.width;
     const portrait = this.isPortrait();
     const tabWidth = portrait ? Math.min(92, Math.floor((width - 32) / 3)) : 190;
-    const tabHeight = portrait ? 34 : 46;
+    const tabHeight = portrait ? 38 : 50;
     const totalWidth = tabWidth * 3 + 8 * 2;
     const startX = width / 2 - totalWidth / 2 + tabWidth / 2;
 
@@ -135,7 +135,7 @@ export class RankScene extends Phaser.Scene {
         .text(x, y, tab.label, {
           color: '#f8fafc',
           fontFamily: 'Arial, sans-serif',
-          fontSize: portrait ? '12px' : '14px',
+          fontSize: portrait ? '13px' : '16px',
           fontStyle: 'bold',
           resolution: TEXT_RESOLUTION,
           wordWrap: { width: tabWidth - 18 },
@@ -172,8 +172,8 @@ export class RankScene extends Phaser.Scene {
   private renderRows(entries: Awaited<ReturnType<typeof fetchLeaderboard>>): void {
     const width = this.scale.width;
     const portrait = this.isPortrait();
-    const rowStartY = portrait ? 224 : 208;
-    const rowGap = portrait ? 38 : 46;
+    const rowStartY = portrait ? 230 : 214;
+    const rowGap = portrait ? 42 : 50;
     const rankX = portrait ? 40 : 90;
     const nameX = portrait ? 104 : 220;
     const scoreX = width - (portrait ? 16 : 90);
@@ -189,7 +189,7 @@ export class RankScene extends Phaser.Scene {
         .text(rankX, y, `${index + 1}`, {
           color: highlight ? '#93c5fd' : '#94a3b8',
           fontFamily: 'Arial, sans-serif',
-          fontSize: portrait ? '11px' : '16px',
+          fontSize: portrait ? '13px' : '18px',
           fontStyle: 'bold',
           resolution: TEXT_RESOLUTION,
         })
@@ -198,7 +198,7 @@ export class RankScene extends Phaser.Scene {
         .text(nameX, y, entry.nickname, {
           color: '#f8fafc',
           fontFamily: 'Arial, sans-serif',
-          fontSize: portrait ? '11px' : '17px',
+          fontSize: portrait ? '13px' : '19px',
           fontStyle: highlight ? 'bold' : 'normal',
           resolution: TEXT_RESOLUTION,
         })
@@ -207,7 +207,7 @@ export class RankScene extends Phaser.Scene {
         .text(scoreX, y, String(entry.score), {
           color: highlight ? '#facc15' : '#f8fafc',
           fontFamily: 'Arial, sans-serif',
-          fontSize: portrait ? '11px' : '18px',
+          fontSize: portrait ? '13px' : '20px',
           fontStyle: 'bold',
           resolution: TEXT_RESOLUTION,
         })
@@ -267,7 +267,7 @@ export class RankScene extends Phaser.Scene {
       .text(x, y, '뒤로가기', {
         color: '#f8fafc',
         fontFamily: 'Arial, sans-serif',
-        fontSize: '13px',
+        fontSize: '15px',
         fontStyle: 'bold',
         resolution: TEXT_RESOLUTION,
       })
