@@ -42,18 +42,18 @@ export class RankScene extends Phaser.Scene {
     const width = this.scale.width;
     const portrait = this.isPortrait();
     const titleX = width / 2;
-    const titleY = portrait ? 38 : 50;
-    const subtitleY = portrait ? 68 : 90;
+    const titleY = portrait ? 36 : 50;
+    const subtitleY = portrait ? 62 : 90;
     const backButtonX = portrait ? 72 : 84;
     const backButtonY = portrait ? 24 : 48;
-    const tabY = portrait ? 112 : 138;
-    const startY = portrait ? 170 : 196;
+    const tabY = portrait ? 132 : 138;
+    const startY = portrait ? 184 : 196;
 
     this.add
       .text(titleX, titleY, '글로벌 순위', {
         color: '#f8fafc',
         fontFamily: 'Arial, sans-serif',
-        fontSize: portrait ? '26px' : '38px',
+        fontSize: portrait ? '25px' : '38px',
         fontStyle: 'bold',
         resolution: TEXT_RESOLUTION,
       })
@@ -69,7 +69,7 @@ export class RankScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.summaryText = this.add
-      .text(titleX, portrait ? 92 : 112, '', {
+      .text(titleX, portrait ? 88 : 112, '', {
         color: '#cbd5e1',
         fontFamily: 'Arial, sans-serif',
         fontSize: portrait ? '10px' : '15px',
@@ -78,7 +78,7 @@ export class RankScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.identityText = this.add
-      .text(titleX, portrait ? 108 : 132, '', {
+      .text(titleX, portrait ? 102 : 132, '', {
         color: '#94a3b8',
         fontFamily: 'Arial, sans-serif',
         fontSize: portrait ? '10px' : '14px',
@@ -87,7 +87,7 @@ export class RankScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.statusText = this.add
-      .text(titleX, portrait ? startY + 34 : startY + 52, '불러오는 중...', {
+      .text(titleX, portrait ? startY + 32 : startY + 52, '불러오는 중...', {
         color: '#94a3b8',
         fontFamily: 'Arial, sans-serif',
         fontSize: portrait ? '10px' : '15px',
@@ -104,8 +104,8 @@ export class RankScene extends Phaser.Scene {
   private createTabs(y: number): void {
     const width = this.scale.width;
     const portrait = this.isPortrait();
-    const tabWidth = portrait ? Math.min(94, Math.floor((width - 32) / 3)) : 190;
-    const tabHeight = portrait ? 36 : 46;
+    const tabWidth = portrait ? Math.min(92, Math.floor((width - 32) / 3)) : 190;
+    const tabHeight = portrait ? 34 : 46;
     const totalWidth = tabWidth * 3 + 8 * 2;
     const startX = width / 2 - totalWidth / 2 + tabWidth / 2;
 
@@ -170,8 +170,8 @@ export class RankScene extends Phaser.Scene {
   private renderRows(entries: Awaited<ReturnType<typeof fetchLeaderboard>>): void {
     const width = this.scale.width;
     const portrait = this.isPortrait();
-    const rowStartY = portrait ? 208 : 208;
-    const rowGap = portrait ? 34 : 46;
+    const rowStartY = portrait ? 224 : 208;
+    const rowGap = portrait ? 33 : 46;
     const rankX = portrait ? 40 : 90;
     const nameX = portrait ? 104 : 220;
     const scoreX = width - (portrait ? 16 : 90);
