@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { configureHiDpiCamera, TEXT_RESOLUTION } from '../render';
 import { getSnakeHighScore, saveSnakeHighScore } from '../storage/highScore';
+import { submitScore } from '../storage/leaderboard';
 
 type Cell = {
   x: number;
@@ -338,6 +339,7 @@ export class SnakeScene extends Phaser.Scene {
     this.finished = true;
     this.started = false;
     this.drawBoard();
+    void submitScore('snake', this.score);
     const portrait = this.isPortrait();
     const width = this.scale.width;
     const height = this.scale.height;

@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { configureHiDpiCamera, TEXT_RESOLUTION } from '../render';
 import { getWhackHighScore, saveWhackHighScore } from '../storage/highScore';
+import { submitScore } from '../storage/leaderboard';
 
 type MoleKind = 'mole' | 'bomb';
 
@@ -364,6 +365,7 @@ export class WhackScene extends Phaser.Scene {
   private finishGame(): void {
     this.finished = true;
     this.updateHighScore();
+    void submitScore('whack', this.score);
     const portrait = this.isPortrait();
     const width = this.scale.width;
     const height = this.scale.height;

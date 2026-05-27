@@ -57,6 +57,17 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
+    this.createActionButton(
+      layout.titleX,
+      layout.portrait ? 124 : 126,
+      layout.portrait ? 160 : 170,
+      layout.portrait ? 36 : 40,
+      '순위보기',
+      () => {
+        this.scene.start('RankScene');
+      },
+    );
+
     const startSnake = (): void => {
       this.scene.start('SnakeScene');
     };
@@ -165,6 +176,38 @@ export class MenuScene extends Phaser.Scene {
       card.setFillStyle(0x111c30).setStrokeStyle(2, 0x243655);
     });
     card.on('pointerdown', config.start);
+  }
+
+  private createActionButton(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    label: string,
+    onClick: () => void,
+  ): void {
+    const button = this.add
+      .rectangle(x, y, width, height, 0x1d4ed8, 0.96)
+      .setStrokeStyle(2, 0x93c5fd)
+      .setInteractive({ useHandCursor: true });
+
+    button.on('pointerdown', onClick);
+    button.on('pointerover', () => {
+      button.setFillStyle(0x2563eb, 1).setStrokeStyle(2, 0xbfdbfe);
+    });
+    button.on('pointerout', () => {
+      button.setFillStyle(0x1d4ed8, 0.96).setStrokeStyle(2, 0x93c5fd);
+    });
+
+    this.add
+      .text(x, y, label, {
+        color: '#eff6ff',
+        fontFamily: 'Arial, sans-serif',
+        fontSize: height <= 36 ? '14px' : '15px',
+        fontStyle: 'bold',
+        resolution: TEXT_RESOLUTION,
+      })
+      .setOrigin(0.5);
   }
 
   private getLayout(): MenuLayout {

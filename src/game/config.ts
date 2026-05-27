@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { RENDER_SCALE } from './render';
 import { DodgeScene } from './scenes/DodgeScene';
 import { MenuScene } from './scenes/MenuScene';
+import { RankScene } from './scenes/RankScene';
 import { SnakeScene } from './scenes/SnakeScene';
 import { WhackScene } from './scenes/WhackScene';
 
@@ -16,5 +17,5 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
   backgroundColor: '#111827',
-  scene: [MenuScene, SnakeScene, DodgeScene, WhackScene],
+  scene: [MenuScene, RankScene, SnakeScene, DodgeScene, WhackScene],
 };

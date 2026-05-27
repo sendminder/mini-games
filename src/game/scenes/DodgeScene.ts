@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { configureHiDpiCamera, TEXT_RESOLUTION } from '../render';
 import { getDodgeHighScore, saveDodgeHighScore } from '../storage/highScore';
+import { submitScore } from '../storage/leaderboard';
 
 type FallingObstacle = {
   x: number;
@@ -418,6 +419,7 @@ export class DodgeScene extends Phaser.Scene {
   private finishGame(): void {
     this.finished = true;
     this.drawGame();
+    void submitScore('dodge', this.score);
     const portrait = this.isPortrait();
     const width = this.scale.width;
     const height = this.scale.height;
