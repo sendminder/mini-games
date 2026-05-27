@@ -20,8 +20,10 @@ const RANKED_VIEW_NAME = 'leaderboard_ranked';
 const PLAYER_KEY_STORAGE = 'shift.leaderboard.playerKey';
 const NICKNAME_STORAGE = 'shift.leaderboard.nickname';
 const NICKNAME_MAX_LENGTH = 12;
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+const FALLBACK_SUPABASE_URL = 'https://neoeceuzwrncwybtlawp.supabase.co';
+const FALLBACK_SUPABASE_ANON_KEY = 'sb_publishable_voseOmvtylPh_Q79YMT15A_KbQ2qU36';
+const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? FALLBACK_SUPABASE_URL;
+const SUPABASE_ANON_KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ?? FALLBACK_SUPABASE_ANON_KEY;
 
 let client: SupabaseClient | null = null;
 
