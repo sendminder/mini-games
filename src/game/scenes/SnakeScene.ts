@@ -73,7 +73,7 @@ export class SnakeScene extends Phaser.Scene {
     const portrait = chrome.portrait;
     const width = chrome.width;
     const height = chrome.height;
-    const titleX = portrait ? 24 : 168;
+    const titleX = width / 2;
     const titleY = chrome.titleY;
     const highScoreX = portrait ? 16 : 792;
     const scoreX = portrait ? 16 : 792;
@@ -89,7 +89,8 @@ export class SnakeScene extends Phaser.Scene {
         fontSize: `${chrome.titleFontSize}px`,
         fontStyle: 'bold',
         resolution: TEXT_RESOLUTION,
-      });
+      })
+      .setOrigin(0.5);
 
     this.highScoreText = this.add.text(highScoreX, portrait ? 24 : 30, `최고  ${this.highScore}`, {
       color: '#facc15',
@@ -346,14 +347,18 @@ export class SnakeScene extends Phaser.Scene {
     const width = this.scale.width;
     const height = this.scale.height;
     const panelWidth = portrait ? Math.min(360, width - 24) : 390;
-    const panelHeight = portrait ? 168 : 130;
+    const panelHeight = portrait ? 176 : 130;
     const panelX = width / 2;
-    const panelY = portrait ? Math.round(height * 0.42) : 292;
-    const titleY = portrait ? panelY - 44 : 255;
-    const bodyY = portrait ? panelY - 2 : 294;
-    const buttonY = portrait ? panelY + 42 : 334;
+    const panelY = portrait ? Math.round(height * 0.40) : 292;
+    const titleY = portrait ? panelY - 48 : 255;
+    const bodyY = portrait ? panelY - 6 : 294;
+    const buttonY = portrait ? panelY + 46 : 334;
     const primaryWidth = portrait ? 200 : 170;
     const buttonHeight = portrait ? 50 : 42;
+
+    this.add
+      .rectangle(panelX + 3, panelY + 4, panelWidth, panelHeight, 0x020617, 0.55)
+      .setDepth(999);
 
     this.add
       .rectangle(panelX, panelY, panelWidth, panelHeight, 0x060d18, 0.96)

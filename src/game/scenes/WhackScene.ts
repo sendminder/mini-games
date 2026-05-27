@@ -47,7 +47,8 @@ export class WhackScene extends Phaser.Scene {
   private graphics!: Phaser.GameObjects.Graphics;
   private scoreText!: Phaser.GameObjects.Text;
   private highScoreText!: Phaser.GameObjects.Text;
-  private lifeText!: Phaser.GameObjects.Text;
+  private lifeLabelText!: Phaser.GameObjects.Text;
+  private lifeHearts: Phaser.GameObjects.Text[] = [];
   private timeText!: Phaser.GameObjects.Text;
   private holes: Hole[] = [];
   private activeHole: Hole | null = null;
@@ -72,7 +73,7 @@ export class WhackScene extends Phaser.Scene {
     const chrome = createScreenChrome(this.scale.width, this.scale.height);
     const portrait = chrome.portrait;
     const width = chrome.width;
-    const titleX = portrait ? 24 : 156;
+    const titleX = width / 2;
     const titleY = chrome.titleY;
     const highScoreX = portrait ? 16 : 810;
     const scoreX = portrait ? 16 : 810;
@@ -93,7 +94,7 @@ export class WhackScene extends Phaser.Scene {
       fontSize: `${chrome.titleFontSize}px`,
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
-    });
+    }).setOrigin(0.5);
 
     this.timeText = this.add.text(timeX, timeY, '경과  0.0초', {
       color: '#94a3b8',
@@ -121,13 +122,16 @@ export class WhackScene extends Phaser.Scene {
     });
     this.scoreText.setOrigin(0, 0);
 
-    this.lifeText = this.add.text(titleX, lifeY, '목숨  3', {
+    this.lifeLabelText = this.add.text(titleX, lifeY, '목숨', {
       color: '#f59e0b',
       fontFamily: 'Arial, sans-serif',
         fontSize: `${chrome.smallFontSize}px`,
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
     });
+    this.lifeLabelText.setOrigin(0, 0);
+
+    this.createLifeHearts(titleX + 52, lifeY + 1, chrome.smallFontSize);
 
     this.add
       .text(portrait ? width / 2 : 480, footerY, footerText, {
@@ -139,6 +143,7 @@ export class WhackScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.createBackButton(backButtonX, backButtonY);
+    this.updateLifeDisplay();
     this.bindControls();
     this.drawBoard();
     this.spawnEntity();
@@ -163,7 +168,7 @@ export class WhackScene extends Phaser.Scene {
       if (this.elapsedMs >= hole.expiresAt) {
         if (hole.kind === 'mole') {
           this.lives -= 1;
-          this.lifeText.setText(`목숨  ${this.lives}`);
+          this.updateLifeDisplay();
           if (this.lives <= 0) {
             this.finishGame();
             return;
@@ -196,6 +201,29 @@ export class WhackScene extends Phaser.Scene {
     this.score = 0;
     this.lives = START_LIVES;
     this.finished = false;
+  }
+
+  private createLifeHearts(startX: number, y: number, fontSize: number): void {
+    const heartSize = Math.round(fontSize * 1.35);
+    const gap = Math.max(20, Math.round(heartSize * 1.05));
+
+    this.lifeHearts = [0, 1, 2].map((index) =>
+      this.add
+        .text(startX + index * gap, y, '♥', {
+          color: '#fb7185',
+          fontFamily: 'Arial, sans-serif',
+          fontSize: `${heartSize}px`,
+          fontStyle: 'bold',
+          resolution: TEXT_RESOLUTION,
+        })
+        .setOrigin(0, 0),
+    );
+  }
+
+  private updateLifeDisplay(): void {
+    this.lifeHearts.forEach((heart, index) => {
+      heart.setVisible(index < this.lives);
+    });
   }
 
   private createBoard(): void {
@@ -371,14 +399,18 @@ export class WhackScene extends Phaser.Scene {
     const width = this.scale.width;
     const height = this.scale.height;
     const panelWidth = portrait ? Math.min(360, width - 32) : 410;
-    const panelHeight = portrait ? 168 : 130;
+    const panelHeight = portrait ? 176 : 130;
     const panelX = width / 2;
-    const panelY = portrait ? Math.round(height * 0.42) : 286;
-    const titleY = portrait ? panelY - 42 : 247;
-    const bodyY = portrait ? panelY - 2 : 289;
-    const buttonY = portrait ? panelY + 42 : 332;
+    const panelY = portrait ? Math.round(height * 0.40) : 286;
+    const titleY = portrait ? panelY - 48 : 247;
+    const bodyY = portrait ? panelY - 6 : 289;
+    const buttonY = portrait ? panelY + 46 : 332;
     const buttonWidth = portrait ? 200 : 170;
     const buttonHeight = 42;
+
+    this.add
+      .rectangle(panelX + 3, panelY + 4, panelWidth, panelHeight, 0x020617, 0.55)
+      .setDepth(999);
 
     this.add
       .rectangle(panelX, panelY, panelWidth, panelHeight, 0x060d18, 0.96)

@@ -70,7 +70,7 @@ export class DodgeScene extends Phaser.Scene {
     const chrome = createScreenChrome(this.scale.width, this.scale.height);
     const portrait = chrome.portrait;
     const width = chrome.width;
-    const titleX = portrait ? 24 : 150;
+    const titleX = width / 2;
     const titleY = chrome.titleY;
     const highScoreX = portrait ? 16 : 810;
     const scoreX = portrait ? 16 : 810;
@@ -90,7 +90,7 @@ export class DodgeScene extends Phaser.Scene {
       fontSize: `${chrome.titleFontSize}px`,
       fontStyle: 'bold',
       resolution: TEXT_RESOLUTION,
-    });
+    }).setOrigin(0.5);
 
     this.timeText = this.add.text(timeX, timeY, '생존  0.0초', {
       color: '#94a3b8',
@@ -425,14 +425,18 @@ export class DodgeScene extends Phaser.Scene {
     const width = this.scale.width;
     const height = this.scale.height;
     const panelWidth = portrait ? Math.min(360, width - 24) : 406;
-    const panelHeight = portrait ? 168 : 130;
+    const panelHeight = portrait ? 176 : 130;
     const panelX = width / 2;
-    const panelY = portrait ? Math.round(height * 0.42) : 285;
-    const titleY = portrait ? panelY - 42 : 246;
-    const bodyY = portrait ? panelY - 2 : 288;
-    const buttonY = portrait ? panelY + 42 : 334;
+    const panelY = portrait ? Math.round(height * 0.40) : 285;
+    const titleY = portrait ? panelY - 48 : 246;
+    const bodyY = portrait ? panelY - 6 : 288;
+    const buttonY = portrait ? panelY + 46 : 334;
     const primaryWidth = portrait ? 200 : 170;
     const buttonHeight = portrait ? 50 : 42;
+
+    this.add
+      .rectangle(panelX + 3, panelY + 4, panelWidth, panelHeight, 0x020617, 0.55)
+      .setDepth(999);
 
     this.add
       .rectangle(panelX, panelY, panelWidth, panelHeight, 0x060d18, 0.96)

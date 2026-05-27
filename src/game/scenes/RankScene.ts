@@ -173,7 +173,7 @@ export class RankScene extends Phaser.Scene {
     const width = this.scale.width;
     const portrait = this.isPortrait();
     const rowStartY = portrait ? 224 : 208;
-    const rowGap = portrait ? 33 : 46;
+    const rowGap = portrait ? 38 : 46;
     const rankX = portrait ? 40 : 90;
     const nameX = portrait ? 104 : 220;
     const scoreX = width - (portrait ? 16 : 90);
