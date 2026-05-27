@@ -37,6 +37,7 @@ export class MenuScene extends Phaser.Scene {
     const dodgeHighScore = getDodgeHighScore();
     const whackHighScore = getWhackHighScore();
     const layout = this.getLayout();
+    const width = this.scale.width;
 
     this.add
       .text(layout.titleX, layout.titleY, 'MINI GAME LIST', {
@@ -62,6 +63,17 @@ export class MenuScene extends Phaser.Scene {
       layout.portrait ? 124 : 126,
       layout.portrait ? 160 : 170,
       layout.portrait ? 36 : 40,
+      '순위보기',
+      () => {
+        this.scene.start('RankScene');
+      },
+    );
+
+    this.createActionButton(
+      layout.portrait ? width - 66 : width - 70,
+      layout.portrait ? 42 : 44,
+      layout.portrait ? 112 : 118,
+      layout.portrait ? 32 : 34,
       '순위보기',
       () => {
         this.scene.start('RankScene');

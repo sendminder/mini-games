@@ -70,11 +70,39 @@ export async function submitScore(gameKey: GameKey, score: number): Promise<bool
     return false;
   }
 
+  const nextScore = Math.floor(score);
+  const { data: existing, error: fetchError } = await supabase
+    .from(TABLE_NAME)
+    .select('id, score')
+    .eq('game_key', gameKey)
+    .eq('player_key', identity.playerKey)
+    .maybeSingle();
+
+  if (fetchError) {
+    return false;
+  }
+
+  if (existing) {
+    if (nextScore <= existing.score) {
+      return true;
+    }
+
+    const { error } = await supabase
+      .from(TABLE_NAME)
+      .update({
+        nickname: identity.nickname,
+        score: nextScore,
+      })
+      .eq('id', existing.id);
+
+    return !error;
+  }
+
   const { error } = await supabase.from(TABLE_NAME).insert({
     game_key: gameKey,
     player_key: identity.playerKey,
     nickname: identity.nickname,
-    score: Math.floor(score),
+    score: nextScore,
   });
 
   return !error;
