@@ -1,5 +1,4 @@
 import Phaser from 'phaser';
-import { RENDER_SCALE } from './render';
 import { DodgeScene } from './scenes/DodgeScene';
 import { MenuScene } from './scenes/MenuScene';
 import { RankScene } from './scenes/RankScene';
@@ -14,10 +13,11 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
   width: window.innerWidth,
   height: window.innerHeight,
   scale: {
-    zoom: RENDER_SCALE,
+    zoom: 1,
     mode: Phaser.Scale.RESIZE,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
+  roundPixels: true,
   backgroundColor: '#111827',
   scene: [MenuScene, RankScene, SnakeScene, DodgeScene, WhackScene, TetrisScene, BrickBreakerScene],
 };

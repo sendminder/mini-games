@@ -189,11 +189,11 @@ export class MenuScene extends Phaser.Scene {
       resolution: TEXT_RESOLUTION,
     });
     this.add.text(leftX, config.y + layout.cardHeight * 0.15, config.description, {
-      color: '#9aa9c2',
+      color: '#cbd5e1',
       fontFamily: 'Arial, sans-serif',
-      fontSize: layout.portrait ? '10px' : '14px',
-      lineSpacing: layout.portrait ? 2 : 0,
-      wordWrap: { width: layout.cardWidth - (layout.portrait ? 170 : 170) },
+      fontSize: layout.portrait ? '12px' : '15px',
+      lineSpacing: layout.portrait ? 3 : 1,
+      wordWrap: { width: layout.cardWidth - (layout.portrait ? 150 : 170) },
       resolution: TEXT_RESOLUTION,
     });
     this.add
